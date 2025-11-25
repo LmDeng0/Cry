@@ -1,0 +1,6 @@
+[0m[[0m[0mdebug[0m] [0m[0m[zinc] IncrementalCompile -----------[0m
+[0m[[0m[0mdebug[0m] [0m[0mIncrementalCompile.incrementalCompile[0m
+[0m[[0m[0mdebug[0m] [0m[0mprevious = Stamps for: 15 products, 13 sources, 11 libraries[0m
+[0m[[0m[0mdebug[0m] [0m[0mcurrent source = Set(${BASE}/src/test/scala/crypto/aes/AesCoreSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/KeyScheduleLLMSpec.scala, ${BASE}/src/test/scala/crypto/gen/AesTopSpec.scala, ${BASE}/src/test/scala/crypto/aes/AesAddRoundKeyLLMSpec.scala, ${BASE}/src/test/scala/crypto/gen/AesEcbKnownAnswerSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/Aes128CoreLLMDebugSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/AesRoundLLMSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/SubBytesLLMSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/Aes128CoreLLMSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/MixColumnsLLMSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/AesAddRoundKeyLLMSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/ShiftRowsLLMSpec.scala, ${BASE}/src/test/scala/crypto/aes/llm/KeyScheduleWordDebugSpec.scala)[0m
+[0m[[0m[0mdebug[0m] [0m[0m> initialChanges = InitialChanges(Changes(added = Set(), removed = Set(), changed = Set(), unmodified = ...),Set(),Set(),API Changes: Set())[0m
+[0m[[0m[0mdebug[0m] [0m[0mNo changes[0m

@@ -1,0 +1,157 @@
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:44:9: reflective access of structural type member value keyIn should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0mThis can be achieved by adding the import clause 'import scala.language.reflectiveCalls'[0m
+[0m[[0m[33mwarn[0m] [0m[0mor by setting the compiler option -language:reflectiveCalls.[0m
+[0m[[0m[33mwarn[0m] [0m[0mSee the Scaladoc for value scala.language.reflectiveCalls for a discussion[0m
+[0m[[0m[33mwarn[0m] [0m[0mwhy the feature should be explicitly enabled.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  ks.io.keyIn := io.key[0m
+[0m[[0m[33mwarn[0m] [0m[0m        ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:44:21: reflective access of structural type member value key should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  ks.io.keyIn := io.key[0m
+[0m[[0m[33mwarn[0m] [0m[0m                    ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:48:8: reflective access of structural type member value rks_dbg should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    io.rks_dbg(i) := ks.io.rks(i).bits[0m
+[0m[[0m[33mwarn[0m] [0m[0m       ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:48:28: reflective access of structural type member value rks should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    io.rks_dbg(i) := ks.io.rks(i).bits[0m
+[0m[[0m[33mwarn[0m] [0m[0m                           ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:53:16: reflective access of structural type member value in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  state0 := io.in.bits.bits ^ ks.io.rks(0).bits[0m
+[0m[[0m[33mwarn[0m] [0m[0m               ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:53:37: reflective access of structural type member value rks should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  state0 := io.in.bits.bits ^ ks.io.rks(0).bits[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                    ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:54:6: reflective access of structural type member value state0_dbg should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.state0_dbg := state0[0m
+[0m[[0m[33mwarn[0m] [0m[0m     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:62:10: reflective access of structural type member value state_in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  sb1.io.state_in   := state0[0m
+[0m[[0m[33mwarn[0m] [0m[0m         ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:63:30: reflective access of structural type member value state_out should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  val state1_sub    = sb1.io.state_out[0m
+[0m[[0m[33mwarn[0m] [0m[0m                             ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:64:10: reflective access of structural type member value state_in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  sh1.io.state_in   := state1_sub[0m
+[0m[[0m[33mwarn[0m] [0m[0m         ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:65:30: reflective access of structural type member value state_out should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  val state1_sh     = sh1.io.state_out[0m
+[0m[[0m[33mwarn[0m] [0m[0m                             ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:66:10: reflective access of structural type member value state_in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  mc1.io.state_in   := state1_sh[0m
+[0m[[0m[33mwarn[0m] [0m[0m         ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:67:30: reflective access of structural type member value state_out should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  val state1_mix    = mc1.io.state_out[0m
+[0m[[0m[33mwarn[0m] [0m[0m                             ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:68:11: reflective access of structural type member value in_state should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  ark1.io.in_state  := state1_mix[0m
+[0m[[0m[33mwarn[0m] [0m[0m          ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:69:11: reflective access of structural type member value in_round should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  ark1.io.in_round  := ks.io.rks(1).bits[0m
+[0m[[0m[33mwarn[0m] [0m[0m          ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:69:30: reflective access of structural type member value rks should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  ark1.io.in_round  := ks.io.rks(1).bits[0m
+[0m[[0m[33mwarn[0m] [0m[0m                             ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:70:31: reflective access of structural type member value out_state should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  val state1        = ark1.io.out_state[0m
+[0m[[0m[33mwarn[0m] [0m[0m                              ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:72:6: reflective access of structural type member value state1_sub_dbg should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.state1_sub_dbg := state1_sub[0m
+[0m[[0m[33mwarn[0m] [0m[0m     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:73:6: reflective access of structural type member value state1_sh_dbg should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.state1_sh_dbg  := state1_sh[0m
+[0m[[0m[33mwarn[0m] [0m[0m     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:74:6: reflective access of structural type member value state1_mix_dbg should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.state1_mix_dbg := state1_mix[0m
+[0m[[0m[33mwarn[0m] [0m[0m     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:82:10: reflective access of structural type member value state_in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    r.io.state_in  := roundStates(i - 1)[0m
+[0m[[0m[33mwarn[0m] [0m[0m         ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:83:10: reflective access of structural type member value round_key should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    r.io.round_key := ks.io.rks(i + 1).bits // rk[2]..rk[9][0m
+[0m[[0m[33mwarn[0m] [0m[0m         ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:83:29: reflective access of structural type member value rks should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    r.io.round_key := ks.io.rks(i + 1).bits // rk[2]..rk[9][0m
+[0m[[0m[33mwarn[0m] [0m[0m                            ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:84:28: reflective access of structural type member value state_out should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    roundStates(i) := r.io.state_out[0m
+[0m[[0m[33mwarn[0m] [0m[0m                           ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:88:8: reflective access of structural type member value states_dbg should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    io.states_dbg(i) := roundStates(i)[0m
+[0m[[0m[33mwarn[0m] [0m[0m       ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:96:15: reflective access of structural type member value state_in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  subFinal.io.state_in   := roundStates(8)         // Round9 输出[0m
+[0m[[0m[33mwarn[0m] [0m[0m              ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:97:14: reflective access of structural type member value state_in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  shFinal.io.state_in    := subFinal.io.state_out[0m
+[0m[[0m[33mwarn[0m] [0m[0m             ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:97:41: reflective access of structural type member value state_out should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  shFinal.io.state_in    := subFinal.io.state_out[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                        ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:98:16: reflective access of structural type member value in_state should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  addkFinal.io.in_state  := shFinal.io.state_out[0m
+[0m[[0m[33mwarn[0m] [0m[0m               ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:98:40: reflective access of structural type member value state_out should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  addkFinal.io.in_state  := shFinal.io.state_out[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                       ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:99:16: reflective access of structural type member value in_round should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  addkFinal.io.in_round  := ks.io.rks(10).bits     // rk[10][0m
+[0m[[0m[33mwarn[0m] [0m[0m               ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:99:35: reflective access of structural type member value rks should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  addkFinal.io.in_round  := ks.io.rks(10).bits     // rk[10][0m
+[0m[[0m[33mwarn[0m] [0m[0m                                  ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:101:33: reflective access of structural type member value out_state should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  val finalState = addkFinal.io.out_state[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:102:6: reflective access of structural type member value final_dbg should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.final_dbg   := finalState[0m
+[0m[[0m[33mwarn[0m] [0m[0m     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:105:6: reflective access of structural type member value in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.in.ready      := true.B[0m
+[0m[[0m[33mwarn[0m] [0m[0m     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:106:6: reflective access of structural type member value out should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.out.valid     := io.in.valid[0m
+[0m[[0m[33mwarn[0m] [0m[0m     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:106:26: reflective access of structural type member value in should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.out.valid     := io.in.valid[0m
+[0m[[0m[33mwarn[0m] [0m[0m                         ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala:107:6: reflective access of structural type member value out should be enabled[0m
+[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
+[0m[[0m[33mwarn[0m] [0m[0m  io.out.bits.bits := finalState[0m
+[0m[[0m[33mwarn[0m] [0m[0m     ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m38 warnings found[0m

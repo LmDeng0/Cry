@@ -1,0 +1,29 @@
+Operator: AES-128 AddRoundKey
+
+Goal:
+  Implement the AddRoundKey step for AES-128.
+  Given a 128-bit state and a 128-bit round key, output is state XOR round key.
+
+Interface:
+  Module name: AesAddRoundKeyLLM
+  Package: crypto.aes.llm
+
+  IO:
+    - in_state:  Input, UInt(128.W)
+    - in_round:  Input, UInt(128.W)
+    - out_state: Output, UInt(128.W)
+
+Behavior:
+  out_state := in_state ^ in_round
+
+Implementation requirements:
+  - Use Chisel3.
+  - Use a plain Module (no Ready/Valid handshake).
+  - Keep the code simple and idiomatic.
+  - Do NOT hard-code any S-box or constants. This is just bitwise XOR.
+  - Put `package crypto.aes.llm` at top of file.
+  - Import `chisel3._`.
+
+Testing hints:
+  - For any 128-bit values a, b, result must be a ^ b.
+  - A special case: if in_round = 0.U, out_state = in_state.

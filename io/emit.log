@@ -1,0 +1,7 @@
+[info] welcome to sbt 1.11.7 (Ubuntu Java 11.0.28)
+[info] loading settings for project crypto-chisel-llm-build from plugins.sbt...
+[info] loading project definition from /home/crypto-chisel-llm/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to crypto-chisel-llm (in build file:/home/crypto-chisel-llm/)
+[info] running (fork) crypto.gen.Emit 
+[success] Total time: 8 s, completed Nov 15, 2025, 3:24:24 PM

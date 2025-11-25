@@ -1,0 +1,57 @@
+version: 0.1
+
+operator:
+  name: AddRoundKey
+  module_name: AddRoundKeyLLMAuto
+  package: crypto.aes.llm.auto
+  category: aes
+  description: >
+    AES-128 AddRoundKey transformation.
+    The input state and round key are both 128-bit values.
+    The output is the bitwise XOR of the state and the key.
+
+  io:
+    clock: implicit
+    reset: implicit
+    inputs:
+      - name: state_in
+        width: 128
+        signed: false
+        description: AES 128-bit state input.
+      - name: round_key
+        width: 128
+        signed: false
+        description: AES 128-bit round key input.
+    outputs:
+      - name: state_out
+        width: 128
+        signed: false
+        description: AES 128-bit state output after XOR with round_key.
+
+  timing:
+    combinational: true
+    latency_cycles: 0
+
+  behavior:
+    kind: stateless_pure
+    description: |
+      Compute the bitwise XOR between the 128-bit state and the 128-bit
+      round key: state_out = state_in XOR round_key.
+    pseudocode: |
+      state_out = state_in XOR round_key
+
+  test_strategy:
+    reference_scala_object: crypto.aes.llm.spec.AddRoundKeySpecUtil
+    reference_function: addRoundKey
+    mode: random_state
+    num_random_tests: 200
+    edge_cases:
+      - name: all_zero
+        state_in_hex: "00000000000000000000000000000000"
+        round_key_hex: "00000000000000000000000000000000"
+      - name: identity_state
+        state_in_hex: "00112233445566778899aabbccddeeff"
+        round_key_hex: "00000000000000000000000000000000"
+      - name: identity_key
+        state_in_hex: "00000000000000000000000000000000"
+        round_key_hex: "00112233445566778899aabbccddeeff"

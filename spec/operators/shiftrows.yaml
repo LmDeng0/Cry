@@ -1,0 +1,58 @@
+version: 0.1
+
+operator:
+  name: ShiftRows
+  module_name: ShiftRowsLLMAuto
+  package: crypto.aes.llm.auto
+  category: aes
+  description: >
+    AES-128 ShiftRows transformation.
+    The input and output are 128-bit AES state values, interpreted
+    as a 4x4 byte matrix in column-major order.
+
+  io:
+    clock: implicit
+    reset: implicit
+    inputs:
+      - name: state_in
+        width: 128
+        signed: false
+        description: >
+          AES 128-bit state input (4x4 bytes, column-major).
+    outputs:
+      - name: state_out
+        width: 128
+        signed: false
+        description: >
+          AES 128-bit state output after ShiftRows.
+
+  timing:
+    combinational: true
+    latency_cycles: 0
+
+  behavior:
+    kind: stateless_pure
+    aes_state_layout: column_major
+    description: |
+      Apply the AES ShiftRows transformation as specified by FIPS-197.
+      The state is a 4x4 byte matrix [row, column], stored in column-major order.
+      Row 0 is not shifted.
+      Row 1 is cyclically left-shifted by 1 byte.
+      Row 2 is cyclically left-shifted by 2 bytes.
+      Row 3 is cyclically left-shifted by 3 bytes.
+    pseudocode: |
+      // state[r][c] : r = 0..3 (row), c = 0..3 (column), column-major in the 128-bit word.
+      for r in 0 .. 3:
+          for c in 0 .. 3:
+              state_out[r][c] = state_in[r][(c + r) mod 4]
+
+  test_strategy:
+    reference_scala_object: crypto.aes.llm.spec.ShiftRowsSpecUtil
+    reference_function: shiftRows
+    mode: random_state
+    num_random_tests: 200
+    edge_cases:
+      - name: identity_check_row0
+        input_hex: "00112233445566778899aabbccddeeff"
+      - name: all_zero
+        input_hex: "00000000000000000000000000000000"

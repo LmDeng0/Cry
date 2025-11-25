@@ -1,0 +1,103 @@
+Operator: AES-128 ShiftRows
+Role: Cyclically shift bytes in the 4x4 AES state matrix.
+
+Chisel IO:
+  - Module name: ShiftRowsLLM
+  - Package: crypto.aes.llm
+  - IO bundle:
+      val state_in  = Input(UInt(128.W))
+      val state_out = Output(UInt(128.W))
+
+State layout (row-major for IO, column-major conceptually):
+  - Treat state_in as 16 bytes b0..b15:
+      b0  = state_in(  7,   0)
+      b1  = state_in( 15,   8)
+      ...
+      b15 = state_in(127, 120)
+
+  - Interpret as AES 4x4 byte matrix in column-major form:
+      [ b0  b4  b8  b12 ]   // row 0 (no shift)
+      [ b1  b5  b9  b13 ]   // row 1 (left rotate by 1 byte)
+      [ b2  b6  b10 b14 ]   // row 2 (left rotate by 2 bytes)
+      [ b3  b7  b11 b15 ]   // row 3 (left rotate by 3 bytes)
+
+ShiftRows transformation:
+  - Row 0: [b0,  b4,  b8,  b12] -> [b0,  b4,  b8,  b12]  (no change)
+  - Row 1: [b1,  b5,  b9,  b13] -> [b5,  b9,  b13, b1 ]  (left rotate by 1)
+  - Row 2: [b2,  b6,  b10, b14] -> [b10, b14, b2,  b6 ]  (left rotate by 2)
+  - Row 3: [b3,  b7,  b11, b15] -> [b15, b3,  b7,  b11]  (left rotate by 3)
+
+  - After ShiftRows, pack the bytes back into a 128-bit word in the SAME order:
+      state_out = Cat(out_b15, out_b14, ..., out_b0)
+    where out_bi is the transformed byte at position i.
+
+Micro-architecture requirements:
+  - Purely combinational logic, single-cycle: no registers, no state.
+  - Implementation pattern:
+
+      1. Split state_in into 16 bytes:
+           val inBytes  = Wire(Vec(16, UInt(8.W)))
+           val outBytes = Wire(Vec(16, UInt(8.W)))
+
+           for (i <- 0 until 16) {
+             inBytes(i) := io.state_in(8 * (i + 1) - 1, 8 * i)
+           }
+
+      2. Assign shifted bytes explicitly:
+           // Row 0
+           outBytes(0)  := inBytes(0)
+           outBytes(4)  := inBytes(4)
+           outBytes(8)  := inBytes(8)
+           outBytes(12) := inBytes(12)
+
+           // Row 1 (shift left by 1)
+           outBytes(1)  := inBytes(5)
+           outBytes(5)  := inBytes(9)
+           outBytes(9)  := inBytes(13)
+           outBytes(13) := inBytes(1)
+
+           // Row 2 (shift left by 2)
+           outBytes(2)  := inBytes(10)
+           outBytes(6)  := inBytes(14)
+           outBytes(10) := inBytes(2)
+           outBytes(14) := inBytes(6)
+
+           // Row 3 (shift left by 3)
+           outBytes(3)  := inBytes(15)
+           outBytes(7)  := inBytes(3)
+           outBytes(11) := inBytes(7)
+           outBytes(15) := inBytes(11)
+
+      3. Recombine:
+        - Use this exact pattern:
+
+            io.state_out := outBytes.reverse.reduce(Cat(_, _))
+
+        - Do NOT use Cat(_), require two parameters Cat(a, b) in the reduce:
+            reduce(Cat(_, _))
+
+  - Use only standard Chisel: chisel3._ and chisel3.util._.
+  - No dynamic indexing tricks, no external helper objects.
+
+File skeleton (MUST follow exactly this header, including imports):
+  - The generated Scala file MUST look like:
+
+        package crypto.aes.llm
+
+        import chisel3._
+        import chisel3.util._
+
+        class ShiftRowsLLM extends Module {
+          val io = IO(new Bundle {
+            val state_in  = Input(UInt(128.W))
+            val state_out = Output(UInt(128.W))
+          })
+
+          // Implement logic exactly as described above.
+        }
+
+Style:
+  - Scala/Chisel 3 code, formatted normally.
+  - The file must contain exactly ONE Chisel module class named ShiftRowsLLM.
+  - Do NOT wrap the code in markdown fences.
+  - The final answer should be ONLY valid Scala code for this module.

@@ -1,0 +1,20 @@
+[info] welcome to sbt 1.11.7 (Ubuntu Java 11.0.28)
+[info] loading settings for project crypto-chisel-llm-build from plugins.sbt...
+[info] loading project definition from /home/crypto-chisel-llm/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to crypto-chisel-llm (in build file:/home/crypto-chisel-llm/)
+[info] AesTopSpec:
+[info] Aes128Core (generated)
+[info] - should handshake one block through the pipeline (placeholder/partial-real logic)
+[info] AesEcbKATJsonSpec:
+[info] Aes128Core KAT JSON Batch
+[info] - should match multiple NIST AES-128 ECB vectors from JSON
+[info] AesCoreSpec:
+[info] AesCore
+[info] - should pass-through one block
+[info] Run completed in 1 minute, 12 seconds.
+[info] Total number of tests run: 3
+[info] Suites: completed 3, aborted 0
+[info] Tests: succeeded 3, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 74 s (0:01:14.0), completed Nov 15, 2025, 3:24:11 PM

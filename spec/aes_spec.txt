@@ -1,0 +1,53 @@
+Algorithm: AES-128
+Mode: ECB
+BlockWidth: 128
+KeyWidth: 128
+Rounds: 10
+
+I/O:
+  - Input:
+      name: in
+      direction: in
+      handshake: Decoupled
+      payload: Block(128)
+  - Output:
+      name: out
+      direction: out
+      handshake: Decoupled
+      payload: Block(128)
+  - Key:
+      name: key
+      direction: in
+      handshake: Valid
+      payload: Key(128)
+
+Pipeline:
+  - KeySchedule:
+      description: Expand 128-bit cipher key into round keys rk0..rk10.
+      latency: about 11 cycles
+      outputs: rk0, rk1, rk2, rk3, rk4, rk5, rk6, rk7, rk8, rk9, rk10
+  - InitialAddRoundKey:
+      description: XOR plaintext block with rk0.
+      latency: 0
+      input: in + rk0
+      output: s0
+  - StandardRound:
+      description: 9 rounds of {SubBytes, ShiftRows, MixColumns, AddRoundKey}.
+      rounds: 9
+      each_latency: about 2 cycles
+  - FinalRound:
+      description: {SubBytes, ShiftRows, AddRoundKey} without MixColumns.
+      latency: 1
+      input: s10 + rk10
+      output: cipher
+
+Security:
+  constant_time: true
+  secret_dependent_branches: forbidden
+  secret_dependent_memory_index: forbidden
+
+Verification:
+  vectors_file: nist_kats_aes_ecb.json
+  properties:
+    - handshake_no_deadlock
+    - const_time_no_secret_branch

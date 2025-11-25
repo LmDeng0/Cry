@@ -1,0 +1,69 @@
+Operator: AES MixColumns (encryption)
+
+Goal:
+  Implement one AES-128 MixColumns round for a 128-bit state.
+  The module name MUST be: MixColumnsLLM
+  Use plain chisel3, no external libraries.
+
+IO:
+  - Input:
+      name:  state_in
+      type:  UInt(128.W)
+  - Output:
+      name:  state_out
+      type:  UInt(128.W)
+
+State layout:
+  - state_in is a 4x4 byte matrix in column-major order, as usual in AES.
+  - Byte indices (0..15) are defined as:
+      b0  = state_in(7, 0)
+      b1  = state_in(15, 8)
+      b2  = state_in(23, 16)
+      ...
+      b15 = state_in(127, 120)
+  - Column 0 = (b0,  b4,  b8,  b12)
+    Column 1 = (b1,  b5,  b9,  b13)
+    Column 2 = (b2,  b6,  b10, b14)
+    Column 3 = (b3,  b7,  b11, b15)
+
+Finite field arithmetic GF(2^8):
+  - All operations are in Rijndael's GF(2^8) with irreducible polynomial 0x11B.
+  - Define xtime(x) for multiplication by {02}:
+        def xtime(x: UInt): UInt = {
+          val shifted  = (x << 1)(7, 0)
+          val overflow = x(7)
+          Mux(overflow === 1.U, shifted ^ "h1b".U(8.W), shifted)
+        }
+  - Define:
+        def mul2(x: UInt): UInt = xtime(x)
+        def mul3(x: UInt): UInt = xtime(x) ^ x
+
+Column transform:
+  For each column (a0, a1, a2, a3) (from top to bottom) compute:
+    r0 = mul2(a0) ^ mul3(a1) ^ a2        ^ a3
+    r1 = a0        ^ mul2(a1) ^ mul3(a2) ^ a3
+    r2 = a0        ^ a1        ^ mul2(a2) ^ mul3(a3)
+    r3 = mul3(a0) ^ a1        ^ a2        ^ mul2(a3)
+
+  Apply this to all 4 columns independently and pack the result
+  back into a 128-bit word with the SAME column-major order:
+    out bytes (c0..c15) should be:
+      Column 0 -> (c0,  c4,  c8,  c12)
+      Column 1 -> (c1,  c5,  c9,  c13)
+      Column 2 -> (c2,  c6,  c10, c14)
+      Column 3 -> (c3,  c7,  c11, c15)
+    And:
+      state_out := Cat(c15, c14, ..., c0)
+
+Implementation hints (important):
+  - Use: import chisel3._
+  - Define: class MixColumnsLLM extends Module { ... }
+  - Inside, use a for-loop and Vec[UInt(8.W)] to avoid writing 16 assignments by hand:
+        val inBytes  = Wire(Vec(16, UInt(8.W)))
+        for (i <- 0 until 16) {
+          inBytes(i) := io.state_in(8*(i+1)-1, 8*i)
+        }
+  - You may use small helper functions for xtime, mul2, mul3 and mixColumn(a0,a1,a2,a3).
+  - Do NOT import or reference any other user-defined modules.
+  - Do NOT print explanations or comments, just the Scala/Chisel code.
+  - Keep the code under ~80 lines.

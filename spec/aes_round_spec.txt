@@ -1,0 +1,45 @@
+Operator: AES Standard Round (encryption, internal round 1..9)
+
+ModuleName: AesRoundLLM
+Package: crypto.aes.llm
+
+I/O:
+  - state_in : 128-bit input state after previous AddRoundKey
+  - round_key: 128-bit round key for this round
+  - state_out: 128-bit output state after {SubBytes, ShiftRows, MixColumns, AddRoundKey}
+
+Behavior:
+  - This is one AES standard encryption round (NOT the final round):
+      state_out = AddRoundKey(MixColumns(ShiftRows(SubBytes(state_in))), round_key)
+  - Use the existing LLM-generated submodules instead of re-implementing logic:
+      * SubBytesLLM  (crypto.aes.llm.SubBytesLLM)
+      * ShiftRowsLLM (crypto.aes.llm.ShiftRowsLLM)
+      * MixColumnsLLM (crypto.aes.llm.MixColumnsLLM)
+      * AesAddRoundKeyLLM (crypto.aes.llm.AesAddRoundKeyLLM)
+
+Chisel Implementation Requirements:
+  - Define an IO bundle:
+      val state_in  = Input(UInt(128.W))
+      val round_key = Input(UInt(128.W))
+      val state_out = Output(UInt(128.W))
+  - Instantiate the four submodules in sequence, wiring 128-bit states:
+      1) val sub = Module(new SubBytesLLM)
+         sub.io.state_in := io.state_in
+      2) val shift = Module(new ShiftRowsLLM)
+         shift.io.state_in := sub.io.state_out
+      3) val mix = Module(new MixColumnsLLM)
+         mix.io.state_in := shift.io.state_out
+      4) val add = Module(new AesAddRoundKeyLLM)
+         add.io.in_state := mix.io.state_out
+         add.io.in_round := io.round_key
+  - The final state_out comes from add.io.out_state:
+      io.state_out := add.io.out_state
+
+Constraints:
+  - The module is purely combinational (no internal registers, no clock gating).
+  - Do NOT implement AES SBox, ShiftRows, MixColumns, or AddRoundKey manually here.
+    Always call the existing LLM modules listed above.
+  - Use package name: crypto.aes.llm
+  - Import needed:
+      import chisel3._
+      import crypto.aes.llm.{SubBytesLLM, ShiftRowsLLM, MixColumnsLLM, AesAddRoundKeyLLM}

@@ -1,0 +1,6 @@
+[LLM] Backend = http
+[INFO] Using LLM to_generate plan...
+[LLM] attempt 1/3 ...
+[LLM] Http backend: POST http://localhost:6006/v1/chat/completions (model=Qwen/Qwen2.5-7B-Instruct)
+[LLM] plan validated successfully at attempt 1.
+[ok] plan written: spec/aes128_auto.yaml (algo=AES, use_llm=True)

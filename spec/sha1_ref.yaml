@@ -1,0 +1,58 @@
+top: Sha1Core
+algo: SHA1
+
+params:
+  BLOCK_W: 512
+  DIGEST_W: 160
+
+bundles:
+  Block:
+    width: 512
+  Digest:
+    width: 160
+  State:
+    width: 160
+
+interfaces:
+  in:
+    dir: in
+    type: Decoupled
+    payload: Block
+  out:
+    dir: out
+    type: Decoupled
+    payload: Digest
+
+dag:
+  - name: ExpandW
+    kind: MessageSchedule
+    latency: 2
+    in: [in]
+    out: [w]
+
+  - name: Round80
+    kind: Round
+    latency: 4
+    in: [w]
+    out: [h]
+
+  - name: FinalDigest
+    kind: Final
+    latency: 1
+    in: [h]
+    out: [digest]
+
+connections:
+  - [in, ExpandW.in]
+  - [ExpandW.w, Round80.in]
+  - [Round80.h, FinalDigest.in]
+  - [FinalDigest.digest, out]
+
+verification:
+  vectors:
+    - sha1_kat.json
+  assertions:
+    - handshake_no_deadlock
+
+security:
+  constant_time: true

@@ -1,0 +1,173 @@
+```yaml
+top: Aes128Core
+algo: AES
+params:
+  BLOCK_W: 128
+  KEY_W: 128
+  ROUNDS: 10
+bundles:
+  Block:
+    width: 128
+  Key:
+    width: 128
+interfaces:
+  in:
+    dir: in
+    handshake: Decoupled
+    payload: Block(128)
+  out:
+    dir: out
+    handshake: Decoupled
+    payload: Block(128)
+  key:
+    dir: in
+    handshake: Valid
+    payload: Key(128)
+dag:
+- name: KeySchedule128
+  kind: KeySchedule
+  latency: 11
+  out:
+  - rk0
+  - rk1
+  - rk2
+  - rk3
+  - rk4
+  - rk5
+  - rk6
+  - rk7
+  - rk8
+  - rk9
+  - rk10
+- name: InitRound
+  kind: AddRoundKey
+  latency: 0
+  in:
+  - in
+  - rk0
+  out:
+  - s0
+- name: Round1
+  kind: StdRound
+  latency: 2
+  in:
+  - s0
+  - rk1
+  out:
+  - s1
+- name: Round2
+  kind: StdRound
+  latency: 2
+  in:
+  - s1
+  - rk2
+  out:
+  - s2
+- name: Round3
+  kind: StdRound
+  latency: 2
+  in:
+  - s2
+  - rk3
+  out:
+  - s3
+- name: Round4
+  kind: StdRound
+  latency: 2
+  in:
+  - s3
+  - rk4
+  out:
+  - s4
+- name: Round5
+  kind: StdRound
+  latency: 2
+  in:
+  - s4
+  - rk5
+  out:
+  - s5
+- name: Round6
+  kind: StdRound
+  latency: 2
+  in:
+  - s5
+  - rk6
+  out:
+  - s6
+- name: Round7
+  kind: StdRound
+  latency: 2
+  in:
+  - s6
+  - rk7
+  out:
+  - s7
+- name: Round8
+  kind: StdRound
+  latency: 2
+  in:
+  - s7
+  - rk8
+  out:
+  - s8
+- name: Round9
+  kind: StdRound
+  latency: 2
+  in:
+  - s8
+  - rk9
+  out:
+  - s9
+- name: Round10
+  kind: StdRound
+  latency: 2
+  in:
+  - s9
+  - rk10
+  out:
+  - s10
+- name: FinalRound
+  kind: FinalRound
+  latency: 1
+  in:
+  - s10
+  - rk10
+  out:
+  - cipher
+connections:
+- - in
+  - InitRound.in
+- - InitRound.s0
+  - Round1.in
+- - Round1.s1
+  - Round2.in
+- - Round2.s1
+  - Round3.in
+- - Round3.s1
+  - Round4.in
+- - Round4.s1
+  - Round5.in
+- - Round5.s1
+  - Round6.in
+- - Round6.s1
+  - Round7.in
+- - Round7.s1
+  - Round8.in
+- - Round8.s1
+  - Round9.in
+- - Round9.s1
+  - Round10.in
+- - Round10.s1
+  - FinalRound.in
+- - FinalRound.cipher
+  - out
+verification:
+  vectors_file: nist_kats_aes_ecb.json
+  properties:
+  - handshake_no_deadlock
+  - const_time_no_secret_branch
+security:
+  constant_time: true
+  forbid_secret_index: true
+```

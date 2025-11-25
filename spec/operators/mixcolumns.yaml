@@ -1,0 +1,69 @@
+version: 0.1
+
+operator:
+  name: MixColumns
+  module_name: MixColumnsLLMAuto
+  package: crypto.aes.llm.auto
+  category: aes
+  description: >
+    AES-128 MixColumns transformation.
+    The input and output are 128-bit AES state values, interpreted
+    as a 4x4 byte matrix in column-major order, where each column is
+    multiplied by the fixed MDS matrix over GF(2^8).
+
+  io:
+    clock: implicit
+    reset: implicit
+    inputs:
+      - name: state_in
+        width: 128
+        signed: false
+        description: >
+          AES 128-bit state input (4x4 bytes, column-major).
+    outputs:
+      - name: state_out
+        width: 128
+        signed: false
+        description: >
+          AES 128-bit state output after MixColumns.
+
+  timing:
+    combinational: true
+    latency_cycles: 0
+
+  behavior:
+    kind: stateless_pure
+    aes_state_layout: column_major
+    description: |
+      Apply the AES MixColumns transformation to each of the 4 columns
+      of the state as defined in FIPS-197. Each column is treated as a
+      4-byte vector over GF(2^8) and multiplied by the fixed 4x4 matrix:
+
+        [ 02 03 01 01 ]
+        [ 01 02 03 01 ]
+        [ 01 01 02 03 ]
+        [ 03 01 01 02 ]
+
+      where multiplication and addition are in GF(2^8) with the AES
+      irreducible polynomial x^8 + x^4 + x^3 + x + 1.
+    pseudocode: |
+      for each column c in 0 .. 3:
+          [s0, s1, s2, s3] = state_in_column[c]
+          state_out_column[c][0] = 2*s0 + 3*s1 + 1*s2 + 1*s3
+          state_out_column[c][1] = 1*s0 + 2*s1 + 3*s2 + 1*s3
+          state_out_column[c][2] = 1*s0 + 1*s1 + 2*s2 + 3*s3
+          state_out_column[c][3] = 3*s0 + 1*s1 + 1*s2 + 2*s3
+      // All operations in GF(2^8).
+
+  test_strategy:
+    reference_scala_object: crypto.aes.llm.spec.MixColumnsSpecUtil
+    reference_function: mixColumns
+    mode: random_state
+    num_random_tests: 200
+    edge_cases:
+      - name: all_zero
+        input_hex: "00000000000000000000000000000000"
+      - name: fips_197_example_state_after_subbytes_shiftrows
+        # The exact hex can be filled later if needed; the spec
+        # harness may ignore or override this entry.
+        input_hex: "00112233445566778899aabbccddeeff"

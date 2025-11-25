@@ -1,0 +1,48 @@
+Algorithm: SHA-1
+BlockWidth: 512
+DigestWidth: 160
+Rounds: 80
+
+I/O:
+  - Input:
+      name: in
+      direction: in
+      handshake: Decoupled
+      payload: Block(512)
+  - Output:
+      name: out
+      direction: out
+      handshake: Decoupled
+      payload: Digest(160)
+
+Pipeline:
+  - MessageSchedule:
+      name: ExpandW
+      description: Expand 512-bit input block into 80 32-bit words W[0..79].
+      latency: about 1-2 cycles
+      outputs: w
+
+  - RoundFunction:
+      name: Round80
+      description: 80 rounds of SHA-1 compression, updating (a,b,c,d,e) with W[t] and constants K[t].
+      latency: about 4 cycles
+      input: w
+      output: h
+
+  - FinalDigest:
+      name: FinalDigest
+      description: Add the working variables back to the initial hash state to produce 160-bit digest.
+      latency: 1
+      input: h
+      output: digest
+
+Security:
+  constant_time: true
+  collision_resistance: required
+  preimage_resistance: required
+
+Verification:
+  vectors:
+    - sha1_kat.json
+  assertions:
+    - handshake_no_deadlock

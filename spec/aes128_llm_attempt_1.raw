@@ -1,0 +1,65 @@
+top: Sha1Core
+algo: SHA1
+
+params:
+  BLOCK_W: 512
+  DIGEST_W: 160
+
+bundles:
+  Block:
+    width: 512
+  Digest:
+    width: 160
+  State:
+    width: 160
+
+interfaces:
+  in:
+    dir: in
+    type: Decoupled
+    payload: Block
+  out:
+    dir: out
+    type: Decoupled
+    payload: Digest
+  key:
+    dir: in
+    type: Decoupled
+    payload: State
+
+dag:
+  - name: MessageSchedule
+    kind: MessageSchedule
+    latency: 2
+    in: [in]
+    out: [w]
+
+  - name: Round80
+    kind: RoundFunction
+    latency: 4
+    in: [w, key]
+    out: [h]
+
+  - name: FinalDigest
+    kind: FinalDigest
+    latency: 1
+    in: [h]
+    out: [digest]
+
+connections:
+  - [in, MessageSchedule.in]
+  - [MessageSchedule.w, Round80.in]
+  - [key, Round80.key]
+  - [Round80.h, FinalDigest.in]
+  - [FinalDigest.digest, out]
+
+verification:
+  vectors:
+    - sha1_kat.json
+  assertions:
+    - handshake_no_deadlock
+
+security:
+  constant_time: true
+  collision_resistance: required
+  preimage_resistance: required

@@ -1,0 +1,55 @@
+version: 0.1
+
+operator:
+  name: SubBytes
+  module_name: SubBytesLLMAuto
+  package: crypto.aes.llm.auto
+  category: aes
+  description: >
+    AES-128 SubBytes transformation.
+    The input and output are 128-bit AES state values, interpreted
+    as a 4x4 byte matrix in column-major order, as in FIPS-197.
+
+  io:
+    clock: implicit
+    reset: implicit
+    inputs:
+      - name: state_in
+        width: 128
+        signed: false
+        description: >
+          AES 128-bit state input (4x4 bytes, column-major).
+    outputs:
+      - name: state_out
+        width: 128
+        signed: false
+        description: >
+          AES 128-bit state output after byte-wise S-Box substitution.
+
+  timing:
+    combinational: true
+    latency_cycles: 0
+
+  behavior:
+    kind: stateless_pure
+    aes_state_layout: column_major
+    description: |
+      Apply the AES SubBytes transformation to each of the 16 bytes
+      of the state. Each byte is replaced by the corresponding entry
+      in the AES S-Box defined in FIPS-197.
+    pseudocode: |
+      // state_in is 128-bit, viewed as 16 bytes s[0..15] in column-major order.
+      // For each byte: s_out[i] = SBOX[s[i]]
+      for i in 0 .. 15:
+          state_out_byte[i] = AES_SBOX[state_in_byte[i]]
+
+  test_strategy:
+    reference_scala_object: crypto.aes.llm.spec.SubBytesSpecUtil
+    reference_function: subBytes
+    mode: random_state
+    num_random_tests: 200
+    edge_cases:
+      - name: all_zero
+        input_hex: "00000000000000000000000000000000"
+      - name: fips_197_example_plaintext
+        input_hex: "00112233445566778899aabbccddeeff"

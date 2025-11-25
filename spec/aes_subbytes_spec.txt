@@ -1,0 +1,77 @@
+Operator: AES-128 SubBytes
+Role: Byte-wise non-linear substitution on the 128-bit AES state.
+
+Chisel IO:
+  - Module name: SubBytesLLM
+  - Package: crypto.aes.llm
+  - IO bundle:
+      val state_in  = Input(UInt(128.W))
+      val state_out = Output(UInt(128.W))
+
+Function:
+  - Interpret state_in as 16 bytes: b0..b15, where:
+      b0  = state_in(  7,   0)
+      b1  = state_in( 15,   8)
+      ...
+      b15 = state_in(127, 120)
+  - For each byte bi, apply the AES S-Box and get bi' = SBox(bi).
+  - Concatenate the 16 substituted bytes back to a 128-bit word as state_out.
+  - The byte order must be preserved: state_out = Cat(b15', b14', ..., b0').
+
+IMPORTANT: S-Box implementation is ALREADY PROVIDED.
+  - There exists a helper object in Scala/Chisel:
+
+        package crypto.aes
+
+        object AesSBoxTable {
+          def sbox(x: UInt): UInt = { ... }  // 8-bit -> 8-bit AES S-Box
+        }
+
+  - You MUST NOT re-implement the S-Box table inside this module.
+  - Do NOT create a new Vec/Seq of 256 constants; instead ALWAYS call:
+        AesSBoxTable.sbox(inByte)
+    for each input byte.
+
+Micro-architecture requirements:
+  - Purely combinational logic, single-cycle: no clock, no registers, no state.
+  - Implementation pattern:
+
+      1. Declare:
+           val stateInBytes  = Wire(Vec(16, UInt(8.W)))
+           val stateOutBytes = Wire(Vec(16, UInt(8.W)))
+
+      2. For i from 0 to 15:
+           stateInBytes(i)  := io.state_in(8 * (i + 1) - 1, 8 * i)
+           stateOutBytes(i) := AesSBoxTable.sbox(stateInBytes(i))
+
+      3. Recombine into 128-bit output:
+           io.state_out := stateOutBytes.reverse.reduce(Cat(_, _))
+
+  - Do NOT use lookup helpers like LookupTable(...) from imaginary libraries.
+  - Do NOT inline the 256-entry S-Box; ALWAYS use AesSBoxTable.sbox.
+  - Use only Chisel standard library: chisel3._ and chisel3.util._.
+  - No loops with while/recursion; only for-loops that Chisel can unroll.
+
+File skeleton (MUST follow exactly this header, including imports):
+  - The generated Scala file MUST look like:
+
+        package crypto.aes.llm
+
+        import chisel3._
+        import chisel3.util._
+        import crypto.aes.AesSBoxTable
+
+        class SubBytesLLM extends Module {
+          val io = IO(new Bundle {
+            val state_in  = Input(UInt(128.W))
+            val state_out = Output(UInt(128.W))
+          })
+
+          // Implement logic exactly as described above.
+        }
+
+Style:
+  - Scala/Chisel 3 code, formatted normally.
+  - The file must contain exactly ONE Chisel module class named SubBytesLLM.
+  - Do NOT wrap the code in markdown fences.
+  - The final answer should be ONLY valid Scala code for this module.
