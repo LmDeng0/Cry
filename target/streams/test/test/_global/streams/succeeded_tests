@@ -1,10 +1,15 @@
 #Successful Tests
-#Tue Nov 25 12:29:41 GMT 2025
-crypto.aes.llm.AesRoundLLMSpec=1764035815542
-crypto.aes.llm.Aes128CoreLLMDebugSpec=1764058623820
-crypto.aes.llm.ShiftRowsLLMSpec=1764058068883
-crypto.aes.llm.MixColumnsLLMSpec=1764058506511
-crypto.aes.llm.SubBytesLLMSpec=1763985031966
-crypto.aes.llm.KeyScheduleLLMSpec=1764035786912
-crypto.aes.llm.Aes128CoreLLMSpec=1764073780953
-crypto.aes.llm.KeyScheduleWordDebugSpec=1764037346057
+#Wed Nov 26 13:50:25 GMT 2025
+crypto.aes.llm.auto.SubBytesAutoSpec=1764164774833
+crypto.aes.llm.Aes128CoreLLMDebugSpec=1764164865093
+crypto.aes.llm.ShiftRowsLLMSpec=1764164953381
+crypto.aes.llm.MixColumnsLLMSpec=1764164773818
+crypto.gen.AesEcbKATJsonSpec=1764164757130
+crypto.aes.llm.KeyScheduleLLMSpec=1764164960439
+crypto.gen.AesTopSpec=1764164773346
+crypto.aes.llm.AesAddRoundKeyLLMSpec=1764164757403
+crypto.aes.AesCoreSpec=1764165025687
+crypto.aes.AesAddRoundKeyLLMSpec=1764165025925
+crypto.aes.llm.SubBytesLLMSpec=1764164737949
+crypto.aes.llm.Aes128CoreLLMSpec=1764164953079
+crypto.aes.llm.KeyScheduleWordDebugSpec=1764164732166

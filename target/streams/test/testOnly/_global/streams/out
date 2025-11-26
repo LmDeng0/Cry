@@ -1,10 +1,76 @@
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(crypto.aes.llm.Aes128CoreLLMSpec, org.scalatest.tools.Framework$$anon$1@523e130d, false, [SuiteSelector])[0m
-[0m[[0m[0minfo[0m] [0m[0m[32mAes128CoreLLMSpec:[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[32m- Aes128CoreLLM should encrypt the FIPS-197 example block correctly (1-cycle combinational core)[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mRun completed in 1 minute, 33 seconds.[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mTotal number of tests run: 1[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mSuites: completed 1, aborted 0[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mTests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[32mAll tests passed.[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mPassed tests:[0m
-[0m[[0m[0mdebug[0m] [0m[0m	crypto.aes.llm.Aes128CoreLLMSpec[0m
+[debug] Running TaskDef(crypto.aes.llm.KeyScheduleWordDebugSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] KeyScheduleWordDebugSpec:
+[info] - Dump KeySchedule intermediate words w[i]
+[debug] Running TaskDef(crypto.aes.llm.SubBytesLLMSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] SubBytesLLMSpec:
+[info] - SubBytesLLM should match software SBox
+[debug] Running TaskDef(crypto.gen.AesEcbKATJsonSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] AesEcbKATJsonSpec:
+[info] Aes128Core KAT JSON Batch
+[info] - should match multiple NIST AES-128 ECB vectors from JSON
+[debug] Running TaskDef(crypto.aes.llm.AesAddRoundKeyLLMSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] AesAddRoundKeyLLMSpec:
+[info] - AesAddRoundKeyLLM should do XOR(state, roundKey)
+[debug] Running TaskDef(crypto.gen.AesTopSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] AesTopSpec:
+[info] Aes128Core (generated)
+[info] - should handshake one block through the pipeline (placeholder/partial-real logic)
+[debug] Running TaskDef(crypto.aes.llm.MixColumnsLLMSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] MixColumnsLLMSpec:
+[info] MixColumnsLLM
+[info] - should match AES MixColumns for several test vectors (big-endian layout)
+[info] - should match FIPS-197 Round1 MixColumns example
+[debug] Running TaskDef(crypto.aes.llm.auto.SubBytesAutoSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] SubBytesAutoSpec:
+[info] - SubBytesLLMAuto should match known AES S-Box vectors
+[debug] Running TaskDef(crypto.aes.llm.AesRoundLLMSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] AesRoundLLMSpec:
+[info] - AesRoundLLM should match software AES round model *** FAILED ***
+[info]   273962541233774226958616331971982041814 did not equal 261598246238701588625627429762007204966
+[info]   Mismatch!
+[info]   state = 0xca1a0cf9405eaea67d544218e3bc1045
+[info]   rk = 0x8cc5821042346179cae884fc4bf82ee2
+[info]   got = 0xce1b442463a177a15ae09535dd2ca2d6
+[info]   exp = 0xc4cdfd55503ef2b242cd163965968466 (AesRoundLLMSpec.scala:139)
+[debug] Running TaskDef(crypto.aes.llm.Aes128CoreLLMDebugSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] Aes128CoreLLMDebugSpec:
+[info] - Aes128CoreLLMDebug should expose per-round states and round keys for FIPS-197 example
+[debug] Running TaskDef(crypto.aes.llm.Aes128CoreLLMSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] Aes128CoreLLMSpec:
+[info] - Aes128CoreLLM should encrypt the FIPS-197 example block correctly (1-cycle combinational core)
+[debug] Running TaskDef(crypto.aes.llm.ShiftRowsLLMSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] ShiftRowsLLMSpec:
+[info] - ShiftRowsLLM should match FIPS-197 Round1 ShiftRows example
+[debug] Running TaskDef(crypto.aes.llm.KeyScheduleLLMSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] KeyScheduleLLMSpec:
+[info] - KeySchedule for AES-128 should match FIPS-197 round keys
+[debug] Running TaskDef(crypto.aes.AesCoreSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] AesCoreSpec:
+[info] AesCore
+[info] - should pass-through one block
+[debug] Running TaskDef(crypto.aes.AesAddRoundKeyLLMSpec, org.scalatest.tools.Framework$$anon$1@197de7ec, false, [SuiteSelector])
+[info] AesAddRoundKeyLLMSpec:
+[info] AesAddRoundKeyLLM
+[info] - should xor state and round key correctly
+[info] Run completed in 5 minutes, 6 seconds.
+[info] Total number of tests run: 15
+[info] Suites: completed 14, aborted 0
+[info] Tests: succeeded 14, failed 1, canceled 0, ignored 0, pending 0
+[info] *** 1 TEST FAILED ***
+[debug] Passed tests:
+[debug] 	crypto.aes.llm.KeyScheduleWordDebugSpec
+[debug] 	crypto.aes.llm.SubBytesLLMSpec
+[debug] 	crypto.gen.AesEcbKATJsonSpec
+[debug] 	crypto.aes.llm.AesAddRoundKeyLLMSpec
+[debug] 	crypto.gen.AesTopSpec
+[debug] 	crypto.aes.llm.MixColumnsLLMSpec
+[debug] 	crypto.aes.llm.auto.SubBytesAutoSpec
+[debug] 	crypto.aes.llm.Aes128CoreLLMDebugSpec
+[debug] 	crypto.aes.llm.Aes128CoreLLMSpec
+[debug] 	crypto.aes.llm.ShiftRowsLLMSpec
+[debug] 	crypto.aes.llm.KeyScheduleLLMSpec
+[debug] 	crypto.aes.AesCoreSpec
+[debug] 	crypto.aes.AesAddRoundKeyLLMSpec
+[error] Failed tests:
+[error] 	crypto.aes.llm.AesRoundLLMSpec
+[error] (Test / testOnly) sbt.TestsFailedException: Tests unsuccessful

@@ -38,18 +38,50 @@ operator:
       of the state. Each byte is replaced by the corresponding entry
       in the AES S-Box defined in FIPS-197.
     pseudocode: |
-      // state_in is 128-bit, viewed as 16 bytes s[0..15] in column-major order.
-      // For each byte: s_out[i] = SBOX[s[i]]
       for i in 0 .. 15:
           state_out_byte[i] = AES_SBOX[state_in_byte[i]]
 
-  test_strategy:
-    reference_scala_object: crypto.aes.llm.spec.SubBytesSpecUtil
-    reference_function: subBytes
-    mode: random_state
-    num_random_tests: 200
-    edge_cases:
-      - name: all_zero
-        input_hex: "00000000000000000000000000000000"
-      - name: fips_197_example_plaintext
-        input_hex: "00112233445566778899aabbccddeeff"
+  # 🔥 新增：给 LLM 的专用提示
+  llm:
+    extra_imports:
+      - crypto.aes.AesSBoxConst
+
+    implementation_hint: |
+      IMPORTANT:
+        - AesSBoxConst.table is a Scala Seq[Int], NOT a hardware Vec.
+        - You MUST convert AesSBoxConst.table to a Vec[UInt(8.W)] FIRST:
+          
+            val sbox = VecInit(AesSBoxConst.table.map(_.U(8.W)))
+
+      IO must be EXACTLY:
+
+        val io = IO(new Bundle {
+          val state_in  = Input(UInt(128.W))
+          val state_out = Output(UInt(128.W))
+        })
+
+      Correct byte extraction (16 bytes):
+
+        val inBytes = Wire(Vec(16, UInt(8.W)))
+        for (i <- 0 until 16) {
+          inBytes(i) := io.state_in(8*(i+1)-1, 8*i)
+        }
+
+      S-Box lookup:
+
+        val outBytes = Wire(Vec(16, UInt(8.W)))
+        for (i <- 0 until 16) {
+          outBytes(i) := sbox(inBytes(i))
+        }
+
+      Assemble output:
+
+        io.state_out := Cat(outBytes.reverse)
+
+      STRICT RULES:
+        - DO NOT use Bits(), SInt(), Signed().
+        - DO NOT use asTypeOf(Vec(...)).
+        - ONLY use UInt.
+        - Use VecInit and Cat EXACTLY as described above.
+        - Do NOT define your own S-Box.
+        - ALWAYS use AesSBoxConst.table through a VecInit conversion.

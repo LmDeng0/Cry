@@ -1,21 +1,13 @@
-[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/test/scala/crypto/aes/llm/MixColumnsLLMSpec.scala:68:16: reflective access of structural type member value state_in should be enabled[0m
-[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
-[0m[[0m[33mwarn[0m] [0m[0mThis can be achieved by adding the import clause 'import scala.language.reflectiveCalls'[0m
-[0m[[0m[33mwarn[0m] [0m[0mor by setting the compiler option -language:reflectiveCalls.[0m
-[0m[[0m[33mwarn[0m] [0m[0mSee the Scaladoc for value scala.language.reflectiveCalls for a discussion[0m
-[0m[[0m[33mwarn[0m] [0m[0mwhy the feature should be explicitly enabled.[0m
-[0m[[0m[33mwarn[0m] [0m[0m        dut.io.state_in.poke(BigInt(hex, 16).U)[0m
-[0m[[0m[33mwarn[0m] [0m[0m               ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/test/scala/crypto/aes/llm/MixColumnsLLMSpec.scala:70:16: reflective access of structural type member value state_out should be enabled[0m
-[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
-[0m[[0m[33mwarn[0m] [0m[0m        dut.io.state_out.expect(BigInt(expHex, 16).U)[0m
-[0m[[0m[33mwarn[0m] [0m[0m               ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/test/scala/crypto/aes/llm/MixColumnsLLMSpec.scala:83:14: reflective access of structural type member value state_in should be enabled[0m
-[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
-[0m[[0m[33mwarn[0m] [0m[0m      dut.io.state_in.poke(BigInt(srHex, 16).U)[0m
-[0m[[0m[33mwarn[0m] [0m[0m             ^[0m
-[0m[[0m[33mwarn[0m] [0m[0m/home/crypto-chisel-llm/src/test/scala/crypto/aes/llm/MixColumnsLLMSpec.scala:85:14: reflective access of structural type member value state_out should be enabled[0m
-[0m[[0m[33mwarn[0m] [0m[0mby making the implicit value scala.language.reflectiveCalls visible.[0m
-[0m[[0m[33mwarn[0m] [0m[0m      dut.io.state_out.expect(BigInt(mcHex, 16).U)[0m
-[0m[[0m[33mwarn[0m] [0m[0m             ^[0m
-[0m[[0m[33mwarn[0m] [0m[0mfour warnings found[0m
+[warn] /home/crypto-chisel-llm/src/test/scala/crypto/aes/llm/auto/SubBytesAutoSpec.scala:35:16: reflective access of structural type member value state_in should be enabled
+[warn] by making the implicit value scala.language.reflectiveCalls visible.
+[warn] This can be achieved by adding the import clause 'import scala.language.reflectiveCalls'
+[warn] or by setting the compiler option -language:reflectiveCalls.
+[warn] See the Scaladoc for value scala.language.reflectiveCalls for a discussion
+[warn] why the feature should be explicitly enabled.
+[warn]         dut.io.state_in.poke(in.U)
+[warn]                ^
+[warn] /home/crypto-chisel-llm/src/test/scala/crypto/aes/llm/auto/SubBytesAutoSpec.scala:37:16: reflective access of structural type member value state_out should be enabled
+[warn] by making the implicit value scala.language.reflectiveCalls visible.
+[warn]         dut.io.state_out.expect(expected.U)
+[warn]                ^
+[warn] two warnings found

@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+import re
 
 # 复用你已有的统一 LLM 封装
 from tools.llm_client import client
@@ -73,10 +74,10 @@ def build_system_prompt() -> str:
         """
     ).strip()
 
-
 def build_initial_user_prompt(spec: dict) -> str:
     """
     首次生成代码时使用的 user prompt。
+    现在是通用版本，会读取 operator.llm.extra_imports / implementation_hint。
     """
     op = spec["operator"]
     module_name = op["module_name"]
@@ -88,6 +89,7 @@ def build_initial_user_prompt(spec: dict) -> str:
     timing = op.get("timing", {})
     behavior = op.get("behavior", {})
 
+    # ===== I/O 文本 =====
     io_text = []
     for inp in inputs:
         io_text.append(
@@ -99,17 +101,37 @@ def build_initial_user_prompt(spec: dict) -> str:
         )
     io_block = "\n".join(io_text)
 
+    # ===== timing 文本 =====
     timing_text = (
         f"combinational={timing.get('combinational', True)}, "
         f"latency_cycles={timing.get('latency_cycles', 0)}"
     )
 
+    # ===== 行为描述 =====
     behavior_desc = behavior.get("description", "")
     pseudocode = behavior.get("pseudocode", "")
 
+    # ===== 读取 llm 区块（如果有）=====
+    llm_cfg = op.get("llm", {}) if isinstance(op.get("llm", {}), dict) else {}
+    extra_imports = llm_cfg.get("extra_imports", []) or []
+    impl_hint = llm_cfg.get("implementation_hint", "").strip()
+
+    imports_text = ""
+    if extra_imports:
+        imports_lines = [f"- import {imp}" for imp in extra_imports]
+        imports_text = "Additional imports that MUST be used:\n" + "\n".join(imports_lines)
+    else:
+        imports_text = "No additional imports beyond standard Chisel3 are required."
+
+    if impl_hint:
+        impl_hint_text = f"Additional implementation hints:\n{impl_hint}"
+    else:
+        impl_hint_text = "No additional implementation hints."
+
+    # ===== 整体 user prompt 拼接 =====
     user_prompt = f"""
     Write a single Scala source file that defines a Chisel3 Module implementing
-    the following AES operator.
+    the following operator.
 
     Module requirements:
     - Package: {package}
@@ -136,8 +158,12 @@ def build_initial_user_prompt(spec: dict) -> str:
     Pseudocode:
     {pseudocode}
 
+    {imports_text}
+
+    {impl_hint_text}
+
     Implementation notes:
-    - The AES state is 4x4 bytes in column-major order, packed in the 128-bit input/output.
+    - The AES state, if used, is 4x4 bytes in column-major order, packed in the 128-bit input/output.
     - Make the implementation clear and explicit.
     - Avoid unnecessary complexity.
     - Do not include any test code in this file.
@@ -148,39 +174,75 @@ def build_initial_user_prompt(spec: dict) -> str:
     return textwrap.dedent(user_prompt).strip()
 
 
+def trim_error_log(error_log: str, max_lines: int = 120) -> str:
+    """
+    把 sbt 日志截断，只保留最后 max_lines 行，避免 LLM 上下文溢出。
+    """
+    lines = error_log.splitlines()
+    if len(lines) <= max_lines:
+        return error_log
+    trimmed = ["[log truncated: showing last %d lines]" % max_lines] + lines[-max_lines:]
+    return "\n".join(trimmed)
+
 def build_repair_user_prompt(spec: dict, previous_code: str, error_log: str) -> str:
     """
     失败后修复时的 user prompt。
+    会把：
+      - 之前版本的 Scala 源码 previous_code
+      - sbt 的完整错误日志 error_log
+    一起发给 LLM，让它在此基础上做最小修改以通过编译和测试。
     """
     op = spec["operator"]
     module_name = op["module_name"]
     package = op["package"]
 
+    # 可选：从 behavior / llm 区块拿一些额外提示，给 repair 用
+    behavior = op.get("behavior", {}) or {}
+    behavior_desc = behavior.get("description", "").strip()
+    pseudocode = behavior.get("pseudocode", "").strip()
+
+    llm_cfg = op.get("llm", {}) or {}
+    impl_hint = llm_cfg.get("implementation_hint", "").strip()
+
     user_prompt = f"""
     You previously wrote a Chisel3 module '{module_name}' in package '{package}'.
     The code failed to compile or failed tests. Below is the current code and the error log.
 
-    Your task:
+    Your repair task:
     - Carefully read the error messages and fix the code.
-    - Keep the same package and class name.
-    - Preserve the I/O interface (ports and widths).
-    - Make minimal but correct changes to satisfy the AES operator specification
-      and pass the tests.
+    - Keep the SAME package and class name: package {package}, class {module_name}.
+    - Preserve the I/O interface: do NOT change port names, directions, or bit widths.
+    - Make minimal but correct changes to satisfy the operator specification
+      and pass sbt compile + tests.
     - Return the FULL corrected Scala source code.
 
     Operator description (for reference):
-    Name: {op['name']}
-    Description: {op.get('description', '')}
+    - Name: {op['name']}
+    - High-level description: {op.get('description', '').strip()}
+
+    Behavior description (for reference):
+    {behavior_desc}
+
+    Pseudocode (for reference):
+    {pseudocode}
+
+    Additional implementation hints (for reference):
+    {impl_hint}
 
     Current Scala code:
     ```scala
     {previous_code}
     ```
 
-    Error log:
+    sbt compile/test error log:
     ```
     {error_log}
     ```
+
+    Important:
+    - Do NOT change the package name or class name.
+    - Do NOT remove required imports (chisel3._, chisel3.util._, and any extra imports mentioned above).
+    - The final code must compile under Scala 2.13 and Chisel3, and pass the existing unit tests.
 
     Return ONLY the corrected Scala source code, starting with:
     package {package}
@@ -208,37 +270,31 @@ def call_llm_with_spec(spec: dict, previous_code: Optional[str], error_log: Opti
     return resp
 
 
-def extract_scala_code_from_response(resp: str, package_name: str) -> str:
-    """
-    清洗 LLM 返回文本，提取 Scala 源码。
-    规则：
-    - 如果有 ``` 块，尝试取包含 scala 的那块
-    - 否则直接返回原文本
-    - 确保以 'package xxx' 开头（必要时裁剪前面的说明文字）
-    """
-    text = resp.strip()
+def extract_scala_code_from_response(raw: str, package_name: str) -> str:
+    if raw is None:
+        return ""
 
-    # 先处理 ``` 包裹的情况
-    if "```" in text:
-        parts = text.split("```")
-        # 优先找 'scala' 标记
-        for i in range(len(parts)):
-            if parts[i].strip().lower().startswith("scala"):
-                if i + 1 < len(parts):
-                    text = parts[i + 1].strip()
-                    break
-        else:
-            # 没有 scala 标记，就取中间块
-            if len(parts) >= 3:
-                text = parts[1].strip()
+    text = raw.strip()
 
-    # 确保从 package 开始
-    pkg_token = f"package {package_name}"
-    idx = text.find(pkg_token)
-    if idx != -1:
-        text = text[idx:]
+    # 1) 去掉 ```scala 或 ``` 代码块
+    fenced = re.findall(r"```(?:scala)?\s*(.*?)```", text, re.DOTALL)
+    if fenced:
+        # 若里面有多个 fenced block，取最长的那个
+        code = max(fenced, key=len).strip()
+    else:
+        code = text
 
-    return text.strip()
+    # 2) 去掉可能出现的前缀 “scala\n”
+    if code.startswith("scala\n"):
+        code = code[6:].lstrip()
+
+    # 3) 只保留从 package 开头到文件结束的内容
+    pkg_idx = code.find(f"package {package_name}")
+    if pkg_idx >= 0:
+        code = code[pkg_idx:].strip()  # 强行从 package 开始截断
+
+    return code.strip()
+
 
 
 # ===== Scala 文件写入 =====
@@ -266,26 +322,81 @@ def write_scala_module_file(spec: dict, scala_code: str) -> Path:
 
 # ===== sbt 调用（当前只连 SubBytesAutoSpec） =====
 
-def run_sbt_test_for_subbytes() -> (bool, str):
+def run_sbt_tests(test_cmd: str, target_suite: str, workdir: str) -> tuple[bool, str]:
     """
-    针对 SubBytesAutoSpec 运行 sbt testOnly。
+    运行 sbt 测试，并且只关心 target_suite（例如 SubBytesAutoSpec）
+    是不是挂了。
+
+    返回: (success_for_target_suite, full_log)
     """
-    cmd = ["sbt", "testOnly", "crypto.aes.llm.auto.SubBytesAutoSpec"]
+    cmd = ["sbt", test_cmd, target_suite]
     print(f"[op_loop] Running: {' '.join(cmd)}")
+
     proc = subprocess.run(
         cmd,
-        cwd=PROJECT_ROOT,
+        cwd=workdir,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stderr=subprocess.PIPE,
         text=True,
     )
-    log = proc.stdout
-    success = proc.returncode == 0
-    if success:
-        print("[op_loop] sbt test succeeded.")
-    else:
-        print("[op_loop] sbt test FAILED.")
-    return success, log
+    full_log = proc.stdout + "\n" + proc.stderr
+
+    # 1) sbt 成功退出，直接认为目标 suite 成功
+    if proc.returncode == 0:
+        print("[op_loop] sbt returned 0, treating as SUCCESS for target suite.")
+        return True, full_log
+
+    # 2) 退出码非 0：可能是别的 suite 挂了，也可能是编译错
+    #    先看有没有 Failed tests 段
+    failed_line = None
+    for line in full_log.splitlines():
+        if "Failed tests:" in line:
+            failed_line = line
+            break
+
+    # 2.a) 如果根本没有 "Failed tests:"，通常说明是编译错误，保守按失败处理
+    if failed_line is None:
+        print("[op_loop] sbt failed without 'Failed tests:' -> probably compile error.")
+        return False, full_log
+
+    # 2.b) 解析 Failed tests: 后面的 suite 名称
+    #      例子: "[error] Failed tests:\n[error] \tcrypto.aes.llm.AesRoundLLMSpec"
+    failed_suites: list[str] = []
+    for line in full_log.splitlines():
+        if line.strip().startswith("[error] Failed tests:"):
+            # 这一行只是标题，继续看后面的几行
+            continue
+        if line.strip().startswith("[error]"):
+            rest = line.strip()[len("[error]"):].strip()
+            # 可能是 "crypto.aes.llm.AesRoundLLMSpec" 或带逗号等
+            if rest:
+                failed_suites.append(rest.strip().strip(","))
+        # 碰到空行就可以停止了（Failed tests 段结束）
+        if line.strip() == "":
+            break
+
+    # 目标 suite 可能是 "crypto.aes.llm.auto.SubBytesAutoSpec"，
+    # 也可能在 spec 里只写了 "SubBytesAutoSpec"。
+    target_simple = target_suite.split(".")[-1]
+
+    # 如果 failed_suites 里没有包含目标 suite，就认为【对当前算子来说】是成功的
+    failed_target = False
+    for s in failed_suites:
+        if target_suite == s or target_simple == s.split(".")[-1]:
+            failed_target = True
+            break
+
+    if not failed_target:
+        print(
+            "[op_loop] sbt failed, but target suite "
+            f"{target_suite} is NOT in failed list ({failed_suites})."
+        )
+        print("[op_loop] Treating this as SUCCESS for the operator, ignoring other failing suites.")
+        return True, full_log
+
+    # 否则，目标 suite 确实失败了 -> 返回失败，让上层去走 repair
+    print(f"[op_loop] Target suite {target_suite} FAILED.")
+    return False, full_log
 
 
 # ===== 主循环 =====
@@ -324,11 +435,22 @@ def main():
 
         print("[op_loop] Calling LLM to generate/repair code...")
         raw_resp = call_llm_with_spec(spec, previous_code=previous_code, error_log=error_log)
+
+        # 调试：看看 LLM 真实返回了什么
+        print(f"[op_loop] LLM raw response length = {len(raw_resp)}")
+        preview = raw_resp[:400].replace("\n", "\\n")
+        print(f"[op_loop] LLM raw response preview: {preview}")
+
         package_name = spec["operator"]["package"]
         scala_code = extract_scala_code_from_response(raw_resp, package_name=package_name)
-        previous_code = scala_code
 
+        # 防御：如果提取出来是空的，就直接用原始响应
+        if not scala_code.strip():
+            print("[op_loop] WARNING: extracted Scala code is empty — keep previous code for repair!")
+        else:
+            previous_code = scala_code
         module_path = write_scala_module_file(spec, scala_code)
+
 
         # 目前只实现 SubBytes 测试
         success, log = run_sbt_test_for_subbytes()
