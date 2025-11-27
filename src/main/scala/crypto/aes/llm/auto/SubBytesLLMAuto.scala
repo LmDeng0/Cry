@@ -22,7 +22,7 @@ class SubBytesLLMAuto extends Module {
   // Perform S-Box lookup
   val outBytes = Wire(Vec(16, UInt(8.W)))
   for (i <- 0 until 16) {
-    outBytes(i) := sbox(inBytes(i))
+    outBytes(i) := sbox(inBytes(i).asUInt)
   }
 
   // Assemble output

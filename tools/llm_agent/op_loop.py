@@ -1,468 +1,357 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Operator Auto Loop: Generate -> Compile/Test -> Repair
-
-Usage:
-  # 环境变量（示例）：
-  # export CRYPTO_LLM_BACKEND=http
-  # export CRYPTO_LLM_BASE_URL="http://localhost:6006/v1"
-  # export CRYPTO_LLM_API_KEY="test-token"
-  # export CRYPTO_LLM_MODEL="Qwen/Qwen2.5-7B-Instruct"
-  #
-  # 运行：
-  # python3 tools/llm_agent/op_loop.py --op SubBytes --max-iters 5
+Generic operator-level Generate → Compile → Test → Repair loop.
+Now extended with automatic dataset collection for training.
 """
 
 import argparse
-import subprocess
+import os
+import sys
 import textwrap
+import subprocess
+import re
 from pathlib import Path
-from typing import Optional
+from typing import Tuple, Optional
+from datetime import datetime
+import json
 
 import yaml
-import re
-
-# 复用你已有的统一 LLM 封装
 from tools.llm_client import client
 
 
-# ===== 项目路径配置 =====
+# ----------------------------------------------------------------------
+# Project root
+# ----------------------------------------------------------------------
 
-# 当前文件在 tools/llm_agent/op_loop.py
-# parents[0] = .../tools/llm_agent
-# parents[1] = .../tools
-# parents[2] = .../PROJECT_ROOT
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-SPEC_DIR = PROJECT_ROOT / "spec" / "operators"
-SCALA_MAIN_DIR = PROJECT_ROOT / "src" / "main" / "scala"
-SCALA_TEST_DIR = PROJECT_ROOT / "src" / "test" / "scala"
+def project_root() -> Path:
+    return Path(__file__).resolve().parents[2]
 
 
-# ===== YAML 加载 =====
+# ----------------------------------------------------------------------
+# Dataset saving (NEW)
+# ----------------------------------------------------------------------
 
-def load_operator_spec(op_name: str) -> dict:
-    """
-    Load YAML spec for given operator, e.g. SubBytes -> subbytes.yaml
-    """
-    filename = op_name.lower() + ".yaml"
-    path = SPEC_DIR / filename
+### [DATASET] 自动保存样本
+def save_op_level_sample(
+    operator: str,
+    spec_yaml: str,
+    system_prompt: str,
+    user_prompt: str,
+    llm_raw_output: str,
+    incorrect_code: str,
+    error_log: str,
+    repaired_code: str,
+    status: str,
+):
+    dataset_dir = Path("datasets/op_level/raw")
+    dataset_dir.mkdir(parents=True, exist_ok=True)
+
+    fname = dataset_dir / f"{operator.lower()}.jsonl"
+    sample = {
+        "id": f"{operator.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        "timestamp": datetime.now().isoformat(),
+
+        "operator": operator,
+        "spec_yaml": spec_yaml,
+
+        "system_prompt": system_prompt,
+        "user_prompt": user_prompt,
+        "llm_raw_output": llm_raw_output,
+
+        "incorrect_code": incorrect_code,
+        "error_log": error_log,
+        "repaired_code": repaired_code,
+
+        "status": status  # "success" / "fail"
+    }
+
+    with open(fname, "a", encoding="utf-8") as f:
+        f.write(json.dumps(sample, ensure_ascii=False))
+        f.write("\n")
+
+
+# ----------------------------------------------------------------------
+# Load YAML
+# ----------------------------------------------------------------------
+
+def load_operator_spec(op_name: str, spec_dir: Path) -> dict:
+    fname = op_name.lower() + ".yaml"
+    path = spec_dir / fname
     if not path.exists():
-        raise FileNotFoundError(f"Spec file not found: {path}")
+        print(f"[op_loop] ERROR: Spec file not found: {path}", file=sys.stderr)
+        sys.exit(1)
+
     with open(path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    return data
+        spec = yaml.safe_load(f)
+
+    print(f"[op_loop] Loaded spec for operator: {op_name}")
+    return spec
 
 
-# ===== Prompt 构造 =====
+def shorten_log(log: str, max_lines: int = 80) -> str:
+    lines = log.splitlines()
+    if len(lines) <= max_lines:
+        return log
+    return "[truncated sbt log]\n" + "\n".join(lines[-max_lines:])
 
-def build_system_prompt() -> str:
-    """
-    系统提示：固定角色设定，强调 Chisel 专家、AES 背景等。
-    """
-    return textwrap.dedent(
+
+# ----------------------------------------------------------------------
+# sbt runner
+# ----------------------------------------------------------------------
+
+def run_sbt_tests(test_cmd: str, target_suite: str, workdir: Path) -> Tuple[bool, str]:
+    sbt_arg = f'{test_cmd} {target_suite}'
+    cmd = ["sbt", sbt_arg]
+
+    print(f'[op_loop] Running: sbt "{sbt_arg}"')
+    proc = subprocess.run(cmd, cwd=str(workdir),
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    full_log = proc.stdout + "\n" + proc.stderr
+
+    print("[op_loop] ----- sbt output (last 80 lines) -----")
+    print(shorten_log(full_log))
+    print("[op_loop] ----- end sbt output -----")
+
+    if proc.returncode == 0:
+        return True, full_log
+
+    if "Failed tests:" not in full_log:
+        return False, full_log
+
+    failed = []
+    in_block = False
+    for line in full_log.splitlines():
+        s = line.strip()
+        if s.startswith("[error] Failed tests:"):
+            in_block = True
+            continue
+        if in_block:
+            if not s:
+                break
+            if s.startswith("[error]"):
+                failed.append(s[len("[error]"):].strip())
+
+    target_simple = target_suite.split(".")[-1]
+    for f in failed:
+        if f == target_suite or f.split(".")[-1] == target_simple:
+            return False, full_log
+
+    return True, full_log
+
+
+# ----------------------------------------------------------------------
+# Prompt builders
+# ----------------------------------------------------------------------
+
+def build_system_prompt(spec: dict, for_repair: bool) -> str:
+    op = spec["operator"]
+    module = op["module_name"]
+    pkg = op["package"]
+    behavior = spec.get("behavior", {})
+    llm_hint = spec.get("llm", {}).get("implementation_hint", "")
+
+    desc = behavior.get("description", "")
+    pseudo = behavior.get("pseudocode", "")
+
+    if not for_repair:
+        text = f"""
+        You are an expert Chisel3 engineer.
+        Implement module {module} in package {pkg}.
+
+        Description:
+        {desc}
+
+        Pseudocode:
+        {pseudo}
+
+        Implementation hints:
+        {llm_hint}
+
+        Rules:
+          - Output ONLY Scala source, beginning with:
+              package {pkg}
+          - No Markdown fences.
         """
-        You are an expert hardware designer specialized in Chisel3 and AES cryptography.
-        Your job is to write correct, synthesizable Chisel3 modules that pass unit tests.
-        Always:
-        - Use package and class names exactly as requested.
-        - Use Chisel3 (import chisel3._ and chisel3.util._).
-        - Make sure the IO Bundle matches the specification (ports and widths).
-        - Follow the described AES state layout (4x4 bytes, column-major).
-        - Return only Scala source code; do not include any explanations.
+    else:
+        text = f"""
+        You are an expert Chisel3 REPAIR agent.
+        Fix the existing module {module}.
+
+        Rules:
+          - Keep same package {pkg}
+          - Keep IO unchanged
+          - No Markdown fences
+          - Output FULL corrected Scala code
         """
-    ).strip()
+    return textwrap.dedent(text).strip()
+
 
 def build_initial_user_prompt(spec: dict) -> str:
-    """
-    首次生成代码时使用的 user prompt。
-    现在是通用版本，会读取 operator.llm.extra_imports / implementation_hint。
-    """
     op = spec["operator"]
-    module_name = op["module_name"]
-    package = op["package"]
-    description = op.get("description", "")
-    io = op["io"]
-    inputs = io["inputs"]
-    outputs = io["outputs"]
-    timing = op.get("timing", {})
-    behavior = op.get("behavior", {})
+    module = op["module_name"]
+    pkg = op["package"]
+    io = op.get("io", {})
 
-    # ===== I/O 文本 =====
-    io_text = []
-    for inp in inputs:
-        io_text.append(
-            f"- Input {inp['name']}: {inp['width']}-bit, signed={inp.get('signed', False)}"
-        )
-    for outp in outputs:
-        io_text.append(
-            f"- Output {outp['name']}: {outp['width']}-bit, signed={outp.get('signed', False)}"
-        )
-    io_block = "\n".join(io_text)
+    inputs = io.get("inputs", [])
+    outputs = io.get("outputs", [])
+    extra_imports = spec.get("llm", {}).get("extra_imports", [])
 
-    # ===== timing 文本 =====
-    timing_text = (
-        f"combinational={timing.get('combinational', True)}, "
-        f"latency_cycles={timing.get('latency_cycles', 0)}"
-    )
+    io_text = "\n".join([
+        f"- Input {i['name']} : {i['width']} bits"
+        for i in inputs
+    ] + [
+        f"- Output {o['name']} : {o['width']} bits"
+        for o in outputs
+    ])
 
-    # ===== 行为描述 =====
-    behavior_desc = behavior.get("description", "")
-    pseudocode = behavior.get("pseudocode", "")
+    imports = "\n".join(f"import {i}" for i in extra_imports)
 
-    # ===== 读取 llm 区块（如果有）=====
-    llm_cfg = op.get("llm", {}) if isinstance(op.get("llm", {}), dict) else {}
-    extra_imports = llm_cfg.get("extra_imports", []) or []
-    impl_hint = llm_cfg.get("implementation_hint", "").strip()
+    text = f"""
+    Write FULL Scala for:
 
-    imports_text = ""
-    if extra_imports:
-        imports_lines = [f"- import {imp}" for imp in extra_imports]
-        imports_text = "Additional imports that MUST be used:\n" + "\n".join(imports_lines)
-    else:
-        imports_text = "No additional imports beyond standard Chisel3 are required."
+      package {pkg}
+      class {module} extends chisel3.Module
 
-    if impl_hint:
-        impl_hint_text = f"Additional implementation hints:\n{impl_hint}"
-    else:
-        impl_hint_text = "No additional implementation hints."
+    IO:
+    {io_text}
 
-    # ===== 整体 user prompt 拼接 =====
-    user_prompt = f"""
-    Write a single Scala source file that defines a Chisel3 Module implementing
-    the following operator.
+    Extra imports:
+    {imports}
 
-    Module requirements:
-    - Package: {package}
-    - Scala class name: {module_name}
-    - Use Chisel3 (import chisel3._ and chisel3.util._).
-    - Use an IO Bundle with the ports described below.
-    - Do NOT include any sbt or main() code, only the Module definition.
-    - Code must compile under Scala 2.13 and Chisel3.
-
-    Operator description:
-    - Name: {op['name']}
-    - Category: {op['category']}
-    - High-level description: {description}
-
-    I/O ports:
-    {io_block}
-
-    Timing:
-    - {timing_text}
-
-    Behavior description:
-    {behavior_desc}
-
-    Pseudocode:
-    {pseudocode}
-
-    {imports_text}
-
-    {impl_hint_text}
-
-    Implementation notes:
-    - The AES state, if used, is 4x4 bytes in column-major order, packed in the 128-bit input/output.
-    - Make the implementation clear and explicit.
-    - Avoid unnecessary complexity.
-    - Do not include any test code in this file.
-
-    Return ONLY the Scala source code, starting with:
-    package {package}
+    Only output Scala code. No Markdown.
     """
-    return textwrap.dedent(user_prompt).strip()
+    return textwrap.dedent(text).strip()
 
 
-def trim_error_log(error_log: str, max_lines: int = 120) -> str:
-    """
-    把 sbt 日志截断，只保留最后 max_lines 行，避免 LLM 上下文溢出。
-    """
-    lines = error_log.splitlines()
-    if len(lines) <= max_lines:
-        return error_log
-    trimmed = ["[log truncated: showing last %d lines]" % max_lines] + lines[-max_lines:]
-    return "\n".join(trimmed)
-
-def build_repair_user_prompt(spec: dict, previous_code: str, error_log: str) -> str:
-    """
-    失败后修复时的 user prompt。
-    会把：
-      - 之前版本的 Scala 源码 previous_code
-      - sbt 的完整错误日志 error_log
-    一起发给 LLM，让它在此基础上做最小修改以通过编译和测试。
-    """
+def build_repair_user_prompt(spec: dict, prev_code: str, log: str) -> str:
     op = spec["operator"]
-    module_name = op["module_name"]
-    package = op["package"]
+    module = op["module_name"]
+    pkg = op["package"]
 
-    # 可选：从 behavior / llm 区块拿一些额外提示，给 repair 用
-    behavior = op.get("behavior", {}) or {}
-    behavior_desc = behavior.get("description", "").strip()
-    pseudocode = behavior.get("pseudocode", "").strip()
+    return textwrap.dedent(f"""
+    Fix the following {module} in package {pkg}.
 
-    llm_cfg = op.get("llm", {}) or {}
-    impl_hint = llm_cfg.get("implementation_hint", "").strip()
+    CURRENT CODE:
+    <<SCALA>>
+    {prev_code}
+    <<END>>
 
-    user_prompt = f"""
-    You previously wrote a Chisel3 module '{module_name}' in package '{package}'.
-    The code failed to compile or failed tests. Below is the current code and the error log.
+    ERROR:
+    <<ERR>>
+    {log}
+    <<END>>
 
-    Your repair task:
-    - Carefully read the error messages and fix the code.
-    - Keep the SAME package and class name: package {package}, class {module_name}.
-    - Preserve the I/O interface: do NOT change port names, directions, or bit widths.
-    - Make minimal but correct changes to satisfy the operator specification
-      and pass sbt compile + tests.
-    - Return the FULL corrected Scala source code.
-
-    Operator description (for reference):
-    - Name: {op['name']}
-    - High-level description: {op.get('description', '').strip()}
-
-    Behavior description (for reference):
-    {behavior_desc}
-
-    Pseudocode (for reference):
-    {pseudocode}
-
-    Additional implementation hints (for reference):
-    {impl_hint}
-
-    Current Scala code:
-    ```scala
-    {previous_code}
-    ```
-
-    sbt compile/test error log:
-    ```
-    {error_log}
-    ```
-
-    Important:
-    - Do NOT change the package name or class name.
-    - Do NOT remove required imports (chisel3._, chisel3.util._, and any extra imports mentioned above).
-    - The final code must compile under Scala 2.13 and Chisel3, and pass the existing unit tests.
-
-    Return ONLY the corrected Scala source code, starting with:
-    package {package}
-    """
-    return textwrap.dedent(user_prompt).strip()
+    Output ONLY corrected Scala code starting with:
+      package {pkg}
+    """).strip()
 
 
-# ===== LLM 调用封装 =====
+# ----------------------------------------------------------------------
+# LLM Call
+# ----------------------------------------------------------------------
 
-def call_llm_with_spec(spec: dict, previous_code: Optional[str], error_log: Optional[str]) -> str:
-    """
-    使用统一的 llm_client 调用模型。
-    - 第一轮：用 initial prompt
-    - 后续：用 repair prompt
-    """
-    system_prompt = build_system_prompt()
-
-    if previous_code is None:
-        user_prompt = build_initial_user_prompt(spec)
+def extract_scala_code_from_response(text: str, package_name: str) -> str:
+    blocks = re.findall(r"```(?:scala)?\s*(.*?)```", text, re.DOTALL)
+    if blocks:
+        code = blocks[-1].strip()
     else:
-        user_prompt = build_repair_user_prompt(spec, previous_code=previous_code, error_log=error_log or "")
+        code = text.strip()
 
-    # 真正的 LLM 调用（dummy/http 由环境变量控制）
-    resp = client.generate(system_prompt=system_prompt, user_prompt=user_prompt)
-    return resp
-
-
-def extract_scala_code_from_response(raw: str, package_name: str) -> str:
-    if raw is None:
-        return ""
-
-    text = raw.strip()
-
-    # 1) 去掉 ```scala 或 ``` 代码块
-    fenced = re.findall(r"```(?:scala)?\s*(.*?)```", text, re.DOTALL)
-    if fenced:
-        # 若里面有多个 fenced block，取最长的那个
-        code = max(fenced, key=len).strip()
-    else:
-        code = text
-
-    # 2) 去掉可能出现的前缀 “scala\n”
-    if code.startswith("scala\n"):
-        code = code[6:].lstrip()
-
-    # 3) 只保留从 package 开头到文件结束的内容
-    pkg_idx = code.find(f"package {package_name}")
-    if pkg_idx >= 0:
-        code = code[pkg_idx:].strip()  # 强行从 package 开始截断
+    pattern = rf"package\s+{re.escape(package_name)}"
+    m = re.search(pattern, code)
+    if m:
+        code = code[m.start():]
 
     return code.strip()
 
 
+def call_llm_with_spec(spec, prev_code, error_log):
+    if prev_code is None:
+        system_prompt = build_system_prompt(spec, False)
+        user_prompt = build_initial_user_prompt(spec)
+    else:
+        system_prompt = build_system_prompt(spec, True)
+        user_prompt = build_repair_user_prompt(spec, prev_code, shorten_log(error_log or ""))
 
-# ===== Scala 文件写入 =====
-
-def write_scala_module_file(spec: dict, scala_code: str) -> Path:
-    """
-    将生成的 Scala 代码写入 src/main/scala/... 目录。
-    这里按 package 路径映射到子目录，例如 crypto.aes.llm.auto -> crypto/aes/llm/auto
-    """
-    op = spec["operator"]
-    package = op["package"]
-    module_name = op["module_name"]
-
-    rel_dir = Path(*package.split("."))
-    target_dir = SCALA_MAIN_DIR / rel_dir
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    target_path = target_dir / f"{module_name}.scala"
-    with open(target_path, "w", encoding="utf-8") as f:
-        f.write(scala_code)
-
-    print(f"[op_loop] Wrote Scala module to: {target_path}")
-    return target_path
+    resp = client.generate(system_prompt=system_prompt, user_prompt=user_prompt)
+    return resp, system_prompt, user_prompt
 
 
-# ===== sbt 调用（当前只连 SubBytesAutoSpec） =====
-
-def run_sbt_tests(test_cmd: str, target_suite: str, workdir: str) -> tuple[bool, str]:
-    """
-    运行 sbt 测试，并且只关心 target_suite（例如 SubBytesAutoSpec）
-    是不是挂了。
-
-    返回: (success_for_target_suite, full_log)
-    """
-    cmd = ["sbt", test_cmd, target_suite]
-    print(f"[op_loop] Running: {' '.join(cmd)}")
-
-    proc = subprocess.run(
-        cmd,
-        cwd=workdir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    full_log = proc.stdout + "\n" + proc.stderr
-
-    # 1) sbt 成功退出，直接认为目标 suite 成功
-    if proc.returncode == 0:
-        print("[op_loop] sbt returned 0, treating as SUCCESS for target suite.")
-        return True, full_log
-
-    # 2) 退出码非 0：可能是别的 suite 挂了，也可能是编译错
-    #    先看有没有 Failed tests 段
-    failed_line = None
-    for line in full_log.splitlines():
-        if "Failed tests:" in line:
-            failed_line = line
-            break
-
-    # 2.a) 如果根本没有 "Failed tests:"，通常说明是编译错误，保守按失败处理
-    if failed_line is None:
-        print("[op_loop] sbt failed without 'Failed tests:' -> probably compile error.")
-        return False, full_log
-
-    # 2.b) 解析 Failed tests: 后面的 suite 名称
-    #      例子: "[error] Failed tests:\n[error] \tcrypto.aes.llm.AesRoundLLMSpec"
-    failed_suites: list[str] = []
-    for line in full_log.splitlines():
-        if line.strip().startswith("[error] Failed tests:"):
-            # 这一行只是标题，继续看后面的几行
-            continue
-        if line.strip().startswith("[error]"):
-            rest = line.strip()[len("[error]"):].strip()
-            # 可能是 "crypto.aes.llm.AesRoundLLMSpec" 或带逗号等
-            if rest:
-                failed_suites.append(rest.strip().strip(","))
-        # 碰到空行就可以停止了（Failed tests 段结束）
-        if line.strip() == "":
-            break
-
-    # 目标 suite 可能是 "crypto.aes.llm.auto.SubBytesAutoSpec"，
-    # 也可能在 spec 里只写了 "SubBytesAutoSpec"。
-    target_simple = target_suite.split(".")[-1]
-
-    # 如果 failed_suites 里没有包含目标 suite，就认为【对当前算子来说】是成功的
-    failed_target = False
-    for s in failed_suites:
-        if target_suite == s or target_simple == s.split(".")[-1]:
-            failed_target = True
-            break
-
-    if not failed_target:
-        print(
-            "[op_loop] sbt failed, but target suite "
-            f"{target_suite} is NOT in failed list ({failed_suites})."
-        )
-        print("[op_loop] Treating this as SUCCESS for the operator, ignoring other failing suites.")
-        return True, full_log
-
-    # 否则，目标 suite 确实失败了 -> 返回失败，让上层去走 repair
-    print(f"[op_loop] Target suite {target_suite} FAILED.")
-    return False, full_log
-
-
-# ===== 主循环 =====
+# ----------------------------------------------------------------------
+# Main loop
+# ----------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--op",
-        type=str,
-        default="SubBytes",
-        help="Operator name, e.g., SubBytes (currently only SubBytes is wired).",
-    )
-    parser.add_argument(
-        "--max-iters",
-        type=int,
-        default=5,
-        help="Maximum LLM iterations.",
-    )
+    parser.add_argument("--op", required=True)
+    parser.add_argument("--spec-dir", default="spec/operators")
+    parser.add_argument("--max-iters", type=int, default=5)
+    parser.add_argument("--keep-on-success", action="store_true")
     args = parser.parse_args()
 
-    op_name = args.op
-    max_iters = args.max_iters
+    root = project_root()
+    spec_dir = root / args.spec_dir
+    spec = load_operator_spec(args.op, spec_dir)
 
-    spec = load_operator_spec(op_name)
-    print(f"[op_loop] Loaded spec for operator: {op_name}")
+    op = spec["operator"]
+    module = op["module_name"]
+    pkg = op["package"]
 
-    if op_name != "SubBytes":
-        print("[op_loop] WARNING: only SubBytes is fully wired right now. "
-              "You can extend run_sbt_test_* for other operators later.")
+    scala_path = (
+        root / "src" / "main" / "scala" / pkg.replace(".", "/") / f"{module}.scala"
+    )
+    scala_path.parent.mkdir(parents=True, exist_ok=True)
 
-    previous_code: Optional[str] = None
-    error_log: Optional[str] = None
+    test_cfg = spec.get("test", {})
+    test_cmd = test_cfg.get("test_cmd", "testOnly")
+    suite_name = test_cfg["suite_name"]
 
-    for iter_idx in range(1, max_iters + 1):
-        print(f"\n[op_loop] ===== Iteration {iter_idx}/{max_iters} =====")
+    print(f"[op_loop] Target module: {pkg}.{module}")
+    print(f"[op_loop] Scala output: {scala_path}")
+    print(f'[op_loop] sbt test command: sbt "{test_cmd} {suite_name}"')
 
-        print("[op_loop] Calling LLM to generate/repair code...")
-        raw_resp = call_llm_with_spec(spec, previous_code=previous_code, error_log=error_log)
+    prev_code = scala_path.read_text() if scala_path.exists() else None
+    error_log = None
 
-        # 调试：看看 LLM 真实返回了什么
-        print(f"[op_loop] LLM raw response length = {len(raw_resp)}")
-        preview = raw_resp[:400].replace("\n", "\\n")
-        print(f"[op_loop] LLM raw response preview: {preview}")
+    spec_yaml = yaml.dump(spec)
 
-        package_name = spec["operator"]["package"]
-        scala_code = extract_scala_code_from_response(raw_resp, package_name=package_name)
+    for i in range(1, args.max_iters + 1):
+        print(f"\n[op_loop] ===== Iteration {i}/{args.max_iters} =====")
 
-        # 防御：如果提取出来是空的，就直接用原始响应
-        if not scala_code.strip():
-            print("[op_loop] WARNING: extracted Scala code is empty — keep previous code for repair!")
-        else:
-            previous_code = scala_code
-        module_path = write_scala_module_file(spec, scala_code)
+        raw_resp, sys_prompt, user_prompt = call_llm_with_spec(spec, prev_code, error_log)
 
+        scala_code = extract_scala_code_from_response(raw_resp, pkg)
+        scala_path.write_text(scala_code)
 
-        # 目前只实现 SubBytes 测试
-        success, log = run_sbt_test_for_subbytes()
-        if success:
-            print(f"[op_loop] ✅ Operator {op_name} passed tests after {iter_idx} iterations.")
-            break
-        else:
-            error_log = log
-            print("[op_loop] Iteration failed, will try to repair with next LLM call.")
+        ok, log = run_sbt_tests(test_cmd, suite_name, root)
 
-    else:
-        print(f"[op_loop] ❌ Reached max iterations ({max_iters}) without passing tests.")
+        ### [DATASET] 保存样本
+        save_op_level_sample(
+            operator=args.op,
+            spec_yaml=spec_yaml,
+            system_prompt=sys_prompt,
+            user_prompt=user_prompt,
+            llm_raw_output=raw_resp,
+            incorrect_code=scala_code,
+            error_log=log,
+            repaired_code=scala_code if ok else "",
+            status="success" if ok else "fail",
+        )
+
+        if ok:
+            print("[op_loop] SUCCESS!")
+            if not args.keep_on_success:
+                return
+            prev_code = scala_code
+            error_log = None
+            continue
+
+        prev_code = scala_code
+        error_log = log
+
+    print("[op_loop] MAX ITERATIONS REACHED - FAILED")
 
 
 if __name__ == "__main__":
