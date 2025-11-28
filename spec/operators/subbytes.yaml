@@ -1,76 +1,67 @@
-version: 0.1
+version: 1.0
 
 operator:
   name: SubBytes
   module_name: SubBytesLLMAuto
+  ref_name: SubBytesRef          # 软件模型类名
+  spec_name: SubBytesAutoSpec    # 自动测试类名
   package: crypto.aes.llm.auto
   category: aes
-  description: >
+
+  description: |
     AES-128 SubBytes transformation.
-    Input/output are 128-bit AES state values, little-endian byte order
-    (byte 0 = lowest 8 bits), matching existing SubBytesLLMSpec tests.
+    The operator applies the AES S-Box to each of the 16 bytes
+    of the 128-bit state. State layout follows FIPS-197.
 
   io:
-    clock: implicit
-    reset: implicit
     inputs:
-      - name: state_in
-        width: 128
-        signed: false
+      - { name: state_in,  width: 128 }
     outputs:
-      - name: state_out
-        width: 128
-        signed: false
+      - { name: state_out, width: 128 }
 
-  timing:
-    combinational: true
-    latency_cycles: 0
-
-  behavior:
-    kind: stateless_pure
-    aes_state_layout: little_endian_bytes
-    description: |
-      For each byte of the 128-bit state (byte 0 = LSB),
-      apply AES S-Box lookup.
-    pseudocode: |
-      for i in 0..15:
-        out[i] = SBOX[in[i]]
+behavior:
+  kind: stateless_pure
+  aes_state_layout: column_major
+  constraints: |
+    - Pure combinational logic.
+    - No registers.
+    - Each byte is substituted independently:
+         state_out[i] = AES_SBOX[state_in[i]]
 
 llm:
+  generate_ref_model: false        # 生成软件参考模型
+  generate_testbench: true        # 生成 test spec
   extra_imports:
     - crypto.aes.AesSBoxConst
 
-  implementation_hint: |
-    IMPORTANT (your output must follow existing tests):
-      - AES state is interpreted LITTLE-ENDIAN:
-          Byte 0 is bits [7:0], byte 15 is [127:120]
-      - Therefore DO NOT reverse output bytes.
+  module_hint: |
+    - Convert AesSBoxConst.table (Seq[Int]) into Vec[UInt(8.W)] via:
+         val sbox = VecInit(AesSBoxConst.table.map(_.U(8.W)))
+    - Extract 16 bytes using bit slicing.
+    - Use only UInt, no SInt/Bits/Signed.
+    - io.state_out = Cat(outBytes.reverse)
 
-      1. Convert S-Box table (Seq[Int]) to Vec[UInt(8.W)]:
-           val sbox = VecInit(AesSBoxConst.table.map(_.U(8.W)))
+  ref_hint: |
+    Implement SubBytes in pure Scala:
+      - state represented as BigInt.
+      - Extract 16 input bytes.
+      - For each byte: out[i] = aes_sbox_table(in[i]).
+      - Return BigInt assembled from substituted bytes.
 
-      2. Extract 16 bytes:
-           val inBytes = Wire(Vec(16, UInt(8.W)))
-           for (i <- 0 until 16) {
-             inBytes(i) := io.state_in(8*(i+1)-1, 8*i)
-           }
-
-      3. S-Box lookup:
-           val outBytes = Wire(Vec(16, UInt(8.W)))
-           for (i <- 0 until 16) {
-             outBytes(i) := sbox(inBytes(i))
-           }
-
-      4. Assemble output (NO reverse):
-           io.state_out := Cat(outBytes)
-
-    STRICT RULES:
-      - ONLY use UInt.
-      - DO NOT use Bits(), SInt(), Signed().
-      - DO NOT use asTypeOf(Vec(...)).
-      - DO NOT define SBOX manually.
-      - ALWAYS use AesSBoxConst.table.
+  test_hint: |
+    - Instantiate SubBytesLLMAuto.
+    - For each test vector:
+        expected = SubBytesRef(in)
+        dut.io.state_in.poke(in.U)
+        step(1)
+        dut.io.state_out.expect(expected.U)
+    - Use 3 fixed AES vectors
+    - Add 20 random vectors
 
 test:
   test_cmd: "testOnly"
   suite_name: "crypto.aes.llm.auto.SubBytesAutoSpec"
+
+dataset:
+  save: true
+  path: datasets/op_level/subbytes

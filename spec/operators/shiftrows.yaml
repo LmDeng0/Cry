@@ -1,58 +1,67 @@
-version: 0.1
+version: 1.0
 
 operator:
-  name: ShiftRows
-  module_name: ShiftRowsLLMAuto
+  name: SubBytes
+  module_name: SubBytesLLMAuto
+  ref_name: SubBytesRef          # 软件模型类名
+  spec_name: SubBytesAutoSpec    # 自动测试类名
   package: crypto.aes.llm.auto
   category: aes
-  description: >
-    AES-128 ShiftRows transformation.
-    The input and output are 128-bit AES state values, interpreted
-    as a 4x4 byte matrix in column-major order.
+
+  description: |
+    AES-128 SubBytes transformation.
+    The operator applies the AES S-Box to each of the 16 bytes
+    of the 128-bit state. State layout follows FIPS-197.
 
   io:
-    clock: implicit
-    reset: implicit
     inputs:
-      - name: state_in
-        width: 128
-        signed: false
-        description: >
-          AES 128-bit state input (4x4 bytes, column-major).
+      - { name: state_in,  width: 128 }
     outputs:
-      - name: state_out
-        width: 128
-        signed: false
-        description: >
-          AES 128-bit state output after ShiftRows.
+      - { name: state_out, width: 128 }
 
-  timing:
-    combinational: true
-    latency_cycles: 0
+behavior:
+  kind: stateless_pure
+  aes_state_layout: column_major
+  constraints: |
+    - Pure combinational logic.
+    - No registers.
+    - Each byte is substituted independently:
+         state_out[i] = AES_SBOX[state_in[i]]
 
-  behavior:
-    kind: stateless_pure
-    aes_state_layout: column_major
-    description: |
-      Apply the AES ShiftRows transformation as specified by FIPS-197.
-      The state is a 4x4 byte matrix [row, column], stored in column-major order.
-      Row 0 is not shifted.
-      Row 1 is cyclically left-shifted by 1 byte.
-      Row 2 is cyclically left-shifted by 2 bytes.
-      Row 3 is cyclically left-shifted by 3 bytes.
-    pseudocode: |
-      // state[r][c] : r = 0..3 (row), c = 0..3 (column), column-major in the 128-bit word.
-      for r in 0 .. 3:
-          for c in 0 .. 3:
-              state_out[r][c] = state_in[r][(c + r) mod 4]
+llm:
+  generate_ref_model: true        # 生成软件参考模型
+  generate_testbench: true        # 生成 test spec
+  extra_imports:
+    - crypto.aes.AesSBoxConst
 
-  test_strategy:
-    reference_scala_object: crypto.aes.llm.spec.ShiftRowsSpecUtil
-    reference_function: shiftRows
-    mode: random_state
-    num_random_tests: 200
-    edge_cases:
-      - name: identity_check_row0
-        input_hex: "00112233445566778899aabbccddeeff"
-      - name: all_zero
-        input_hex: "00000000000000000000000000000000"
+  module_hint: |
+    - Convert AesSBoxConst.table (Seq[Int]) into Vec[UInt(8.W)] via:
+         val sbox = VecInit(AesSBoxConst.table.map(_.U(8.W)))
+    - Extract 16 bytes using bit slicing.
+    - Use only UInt, no SInt/Bits/Signed.
+    - io.state_out = Cat(outBytes.reverse)
+
+  ref_hint: |
+    Implement SubBytes in pure Scala:
+      - state represented as BigInt.
+      - Extract 16 input bytes.
+      - For each byte: out[i] = aes_sbox_table(in[i]).
+      - Return BigInt assembled from substituted bytes.
+
+  test_hint: |
+    - Instantiate SubBytesLLMAuto.
+    - For each test vector:
+        expected = SubBytesRef(in)
+        dut.io.state_in.poke(in.U)
+        step(1)
+        dut.io.state_out.expect(expected.U)
+    - Use 3 fixed AES vectors
+    - Add 20 random vectors
+
+test:
+  test_cmd: "testOnly"
+  suite_name: "crypto.aes.llm.auto.SubBytesAutoSpec"
+
+dataset:
+  save: true
+  path: datasets/op_level/subbytes
