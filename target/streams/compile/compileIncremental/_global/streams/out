@@ -1,28 +1,28 @@
 [debug] [zinc] IncrementalCompile -----------
 [debug] IncrementalCompile.incrementalCompile
 [debug] previous = Stamps for: 54 products, 24 sources, 3 libraries
-[debug] current source = Set(${BASE}/src/main/scala/crypto/aes/llm/ShiftRowsLLM.scala, ${BASE}/src/main/scala/crypto/aes/MixColumns.scala, ${BASE}/src/main/scala/crypto/aes/AesSBoxConst.scala, ${BASE}/src/main/scala/crypto/aes/llm/Aes128CoreLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/AesRoundLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/MixColumnsLLM.scala, ${BASE}/src/main/scala/crypto/gen/Aes128Core.scala, ${BASE}/src/main/scala/crypto/aes/KeySchedule.scala, ${BASE}/src/main/scala/crypto/aes/llm/SubBytesLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/AesAddRoundKeyLLM.scala, ${BASE}/src/main/scala/crypto/aes/ShiftRows.scala, ${BASE}/src/main/scala/crypto/gen/KeyScheduleGen.scala, ${BASE}/src/main/scala/crypto/common/Params.scala, ${BASE}/src/main/scala/crypto/aes/SubBytes.scala, ${BASE}/src/main/scala/crypto/aes/AesSBoxTable.scala, ${BASE}/src/main/scala/crypto/aes/AddRoundKey.scala, ${BASE}/src/main/scala/crypto/gen/Emit.scala, ${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala, ${BASE}/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala, ${BASE}/src/main/scala/crypto/gen/StdRoundGen.scala, ${BASE}/src/main/scala/crypto/aes/llm/auto/ShiftRowsLLMAuto.scala, ${BASE}/src/main/scala/crypto/gen/AddRoundKeyGen.scala, ${BASE}/src/main/scala/crypto/aes/AesCore.scala, ${BASE}/src/main/scala/crypto/aes/Round.scala, ${BASE}/src/main/scala/crypto/gen/FinalRoundGen.scala)
-[debug] > initialChanges = InitialChanges(Changes(added = Set(${BASE}/src/main/scala/crypto/aes/llm/auto/ShiftRowsLLMAuto.scala), removed = Set(), changed = Set(), unmodified = ...),Set(),Set(),API Changes: Set())
+[debug] current source = Set(${BASE}/src/main/scala/crypto/aes/llm/ShiftRowsLLM.scala, ${BASE}/src/main/scala/crypto/aes/MixColumns.scala, ${BASE}/src/main/scala/crypto/aes/AesSBoxConst.scala, ${BASE}/src/main/scala/crypto/aes/llm/Aes128CoreLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/AesRoundLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/MixColumnsLLM.scala, ${BASE}/src/main/scala/crypto/gen/Aes128Core.scala, ${BASE}/src/main/scala/crypto/aes/KeySchedule.scala, ${BASE}/src/main/scala/crypto/aes/llm/SubBytesLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/AesAddRoundKeyLLM.scala, ${BASE}/src/main/scala/crypto/aes/ShiftRows.scala, ${BASE}/src/main/scala/crypto/gen/KeyScheduleGen.scala, ${BASE}/src/main/scala/crypto/common/Params.scala, ${BASE}/src/main/scala/crypto/aes/SubBytes.scala, ${BASE}/src/main/scala/crypto/aes/AesSBoxTable.scala, ${BASE}/src/main/scala/crypto/aes/AddRoundKey.scala, ${BASE}/src/main/scala/crypto/gen/Emit.scala, ${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala, ${BASE}/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala, ${BASE}/src/main/scala/crypto/gen/StdRoundGen.scala, ${BASE}/src/main/scala/crypto/gen/AddRoundKeyGen.scala, ${BASE}/src/main/scala/crypto/aes/AesCore.scala, ${BASE}/src/main/scala/crypto/aes/Round.scala, ${BASE}/src/main/scala/crypto/gen/FinalRoundGen.scala)
+[debug] > initialChanges = InitialChanges(Changes(added = Set(), removed = Set(), changed = Set(${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala), unmodified = ...),Set(),Set(),API Changes: Set())
 [debug] 
 [debug] Initial source changes:
 [debug] 	removed: Set()
-[debug] 	added: Set(${BASE}/src/main/scala/crypto/aes/llm/auto/ShiftRowsLLMAuto.scala)
-[debug] 	modified: Set()
+[debug] 	added: Set()
+[debug] 	modified: Set(${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala)
 [debug] Invalidated products: Set()
 [debug] External API changes: API Changes: Set()
 [debug] Modified binary dependencies: Set()
-[debug] Initial directly invalidated classes: Set()
+[debug] Initial directly invalidated classes: Set(crypto.aes.llm.auto.SubBytesLLMAuto)
 [debug] Sources indirectly invalidated by:
 [debug] 	product: Set()
 [debug] 	binary dep: Set()
 [debug] 	external source: Set()
-[debug] All initially invalidated classes: Set()
-[debug] All initially invalidated sources:Set(${BASE}/src/main/scala/crypto/aes/llm/auto/ShiftRowsLLMAuto.scala)
-[debug] Initial set of included nodes: 
+[debug] All initially invalidated classes: Set(crypto.aes.llm.auto.SubBytesLLMAuto)
+[debug] All initially invalidated sources:Set(${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala)
+[debug] Initial set of included nodes: crypto.aes.llm.auto.SubBytesLLMAuto
 [debug] compilation cycle 1
 [info] compiling 1 Scala source to /home/crypto-chisel-llm/target/scala-2.13/classes ...
 [debug] Returning already retrieved and compiled bridge: /root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala2-sbt-bridge/2.13.14/scala2-sbt-bridge-2.13.14.jar.
-[debug] [zinc] Running cached compiler 1699ce5 for Scala compiler version 2.13.14
+[debug] [zinc] Running cached compiler 3d5cd4a8 for Scala compiler version 2.13.14
 [debug] [zinc] The Scala compiler is invoked with:
 [debug] 	-deprecation
 [debug] 	-unchecked

@@ -30,7 +30,7 @@ behavior:
 
 llm:
   generate_ref_model: false        # 生成软件参考模型
-  generate_testbench: true        # 生成 test spec
+  generate_testbench: false           # 生成 test spec
   extra_imports:
     - crypto.aes.AesSBoxConst
 

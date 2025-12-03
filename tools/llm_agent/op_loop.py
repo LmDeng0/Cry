@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Generic operator-level Generate → Compile → Test → Repair loop
-with OPTIONAL data collection for CryptoChisel-LLM, and OPTIONAL
-auto-generation of reference model / testbench.
+with OPTIONAL data collection for CryptoChisel-LLM,
+and OPTIONAL auto-generation of reference model / testbench.
 
 Usage example (from project root):
 
@@ -12,36 +12,43 @@ Usage example (from project root):
 约定：
   - 对应的 YAML spec 放在：spec/operators/<op>.yaml
     例如：SubBytes → spec/operators/subbytes.yaml
+
   - YAML 结构大致为（字段是增量扩展，旧版仍然兼容）：
 
-      version: 1.0
-      operator:
-        name: SubBytes
-        module_name: SubBytesLLMAuto
-        package: crypto.aes.llm.auto
-        # 可选：
-        # ref_name: SubBytesRef
-        # spec_name: SubBytesAutoSpec
-      behavior:
-        description: | ...
-        pseudocode: | ...
-      llm:
-        extra_imports:
-          - crypto.aes.AesSBoxConst
-        # 旧字段，继续兼容：
-        implementation_hint: | ...
-        # 新字段（可选）：
-        module_hint: | ...
-        ref_hint: | ...
-        test_hint: | ...
-        generate_ref_model: true/false
-        generate_testbench: true/false
-      test:
-        test_cmd: "testOnly"
-        suite_name: "crypto.aes.llm.auto.SubBytesAutoSpec"
-      dataset:
-        save: true
-        path: datasets/op_level/subbytes
+    version: 1.0
+    operator:
+      name: SubBytes
+      module_name: SubBytesLLMAuto
+      package: crypto.aes.llm.auto
+      # 可选：
+      # ref_name: SubBytesRef
+      # spec_name: SubBytesAutoSpec
+
+    behavior:
+      description: |
+        ...
+      pseudocode: |
+        ...
+
+    llm:
+      extra_imports:
+        - crypto.aes.AesSBoxConst
+      # 旧字段，继续兼容：
+      implementation_hint: | ...
+      # 新字段（可选）：
+      module_hint: | ...
+      ref_hint: | ...
+      test_hint: | ...
+      generate_ref_model: true/false
+      generate_testbench: true/false
+
+    test:
+      test_cmd: "testOnly"
+      suite_name: "crypto.aes.llm.auto.SubBytesAutoSpec"
+
+    dataset:
+      save: true
+      path: datasets/op_level/subbytes
 
   - LLM 调用统一通过 tools.llm_client.client
 """
@@ -65,6 +72,7 @@ from tools.llm_client import client
 # ----------------------------------------------------------------------
 # 基础工具函数
 # ----------------------------------------------------------------------
+
 
 def project_root() -> Path:
     """
@@ -112,6 +120,7 @@ def shorten_log(log: str, max_lines: int = 80) -> str:
 # 数据集目录 & 追踪记录
 # ----------------------------------------------------------------------
 
+
 def get_dataset_dir(root: Path, op_name: str, spec: dict) -> Path:
     """
     针对每个算子，建立独立的数据目录，例如：
@@ -149,6 +158,7 @@ def append_trace_record(
 ) -> None:
     """
     将本次迭代/生成的全部信息记录到 JSONL 文件中：
+
       datasets/op_level/<op>/op_trace.jsonl
 
     一条记录大致结构：
@@ -163,9 +173,9 @@ def append_trace_record(
       }
 
     说明：
-      - test_cmd / suite_name / test_ok / sbt_log 在“纯生成”（如 ref/testbench）阶段可以为 None。
+      - test_cmd / suite_name / test_ok / sbt_log
+        在“纯生成”（如 ref/testbench）阶段可以为 None。
     """
-    ds_cfg = {"save": True}
     trace_path = dataset_dir / "op_trace.jsonl"
 
     # 当前 LLM 配置信息（从环境变量获得）
@@ -199,7 +209,9 @@ def append_trace_record(
             "test_cmd": test_cmd,
             "suite_name": suite_name,
             "ok": test_ok,
-            "sbt_log_tail": shorten_log(sbt_log or "", max_lines=120) if sbt_log is not None else None,
+            "sbt_log_tail": shorten_log(sbt_log or "", max_lines=120)
+            if sbt_log is not None
+            else None,
         },
     }
 
@@ -211,6 +223,7 @@ def append_trace_record(
 # sbt 调用 + 只关心目标 suite 是否失败
 # ----------------------------------------------------------------------
 
+
 def run_sbt_tests(test_cmd: str, target_suite: str, workdir: Path) -> Tuple[bool, str]:
     """
     运行 sbt 测试，并且只关心 target_suite（例如 "crypto.aes.llm.auto.SubBytesAutoSpec"）
@@ -220,8 +233,11 @@ def run_sbt_tests(test_cmd: str, target_suite: str, workdir: Path) -> Tuple[bool
       (success_for_target_suite, full_log)
 
     我们刻意模拟命令行形式：
+
       sbt "testOnly crypto.aes.llm.auto.SubBytesAutoSpec"
+
     即把 test_cmd + suite_name 作为一个整体参数传给 sbt：
+
       cmd = ["sbt", "testOnly crypto.aes.llm.auto.SubBytesAutoSpec"]
     """
     sbt_arg = f"{test_cmd} {target_suite}"
@@ -237,7 +253,7 @@ def run_sbt_tests(test_cmd: str, target_suite: str, workdir: Path) -> Tuple[bool
     )
     full_log = proc.stdout + "\n" + proc.stderr
 
-    # 👉 打印 sbt 输出的尾部，方便你看到失败原因
+    # 打印 sbt 输出的尾部，方便你看到失败原因
     print("[op_loop] ----- sbt output (last 80 lines) -----")
     print(shorten_log(full_log, max_lines=80))
     print("[op_loop] ----- end sbt output -----")
@@ -285,7 +301,10 @@ def run_sbt_tests(test_cmd: str, target_suite: str, workdir: Path) -> Tuple[bool
             "[op_loop] sbt failed, but target suite "
             f"{target_suite} is NOT in failed list ({failed_suites})."
         )
-        print("[op_loop] Treating this as SUCCESS for the operator, ignoring other failing suites.")
+        print(
+            "[op_loop] Treating this as SUCCESS for the operator, "
+            "ignoring other failing suites."
+        )
         return True, full_log
 
     print(f"[op_loop] Target suite {target_suite} FAILED.")
@@ -296,11 +315,13 @@ def run_sbt_tests(test_cmd: str, target_suite: str, workdir: Path) -> Tuple[bool
 # Prompt 构造（模块实现：修剪过，避免超上下文）
 # ----------------------------------------------------------------------
 
+
 def build_module_system_prompt(spec: dict, for_repair: bool) -> str:
     """
     给 LLM 的 system prompt（模块实现），分两种模式：
       - 初次生成：稍微详细一点；
-      - 修复模式：尽量短，避免上下文太长。
+      - 修复模式：尽量短，但明确强调“根据编译/测试错误修代码”
+        并附带一些通用 Chisel 语法/风格规则。
     """
     op = spec["operator"]
     module_name = op["module_name"]
@@ -310,6 +331,7 @@ def build_module_system_prompt(spec: dict, for_repair: bool) -> str:
 
     desc = behavior.get("description", "")
     pseudo = behavior.get("pseudocode", "")
+
     # 兼容旧字段 implementation_hint、新字段 module_hint
     llm_hint = llm_cfg.get("module_hint") or llm_cfg.get("implementation_hint", "")
 
@@ -317,7 +339,7 @@ def build_module_system_prompt(spec: dict, for_repair: bool) -> str:
         sp = f"""
         You are an expert Chisel3 hardware engineer.
         Your task is to implement a single Chisel3 module
-        according to an AES operator specification.
+        according to an AES/operator specification.
 
         Target module:
           - package: {package}
@@ -332,7 +354,15 @@ def build_module_system_prompt(spec: dict, for_repair: bool) -> str:
         Implementation hints (if any):
         {llm_hint}
 
-        Rules:
+        General Chisel3 rules:
+          - Always use `UInt`, `SInt`, `Bool`, `Vec`, `Wire`, `Reg`, etc. for hardware.
+          - For arrays of hardware values, prefer `Wire(Vec(n, UInt(w.W)))`
+            or `VecInit(...)`. DO NOT rely on mutable Scala collections.
+          - Use `:=` for hardware assignment, not `=`.
+          - Do NOT use `.toSeq` on hardware types when you intend to update elements later.
+          - Do NOT define your own I/O bundle fields beyond what the spec requires.
+
+        Output rules:
           - Always generate valid Scala + Chisel3.
           - Do NOT include Markdown fences (no ```scala```).
           - The code must start with:
@@ -340,20 +370,56 @@ def build_module_system_prompt(spec: dict, for_repair: bool) -> str:
           - Keep module name and IO interface exactly as specified.
         """
     else:
+        # 修复模式：增加“必须根据错误信息修改代码”的硬约束 + Chisel 常见坑说明
         sp = f"""
         You are an expert Chisel3 engineer acting as a REPAIR agent.
-        You will be given the current Scala module code and a truncated
-        compile/test error log. Your job is to minimally fix the code so
-        that it compiles and passes the tests.
+
+        You will be given:
+          - The CURRENT Scala/Chisel3 module code.
+          - A truncated compile/test error log from sbt.
+
+        Your job is to MINIMALLY FIX the code so that it compiles
+        and passes the tests.
 
         Target module:
           - package: {package}
           - class:   {module_name}
 
-        Rules:
-          - Do NOT change the package or class name.
-          - Keep the IO interface (port names and widths) unchanged.
+        Very important repair rules:
+          - You MUST carefully read the error messages and fix the exact
+            lines that cause the errors. Do NOT ignore the error log.
+          - You MUST change the implementation when there are errors;
+            do NOT simply re-emit the same (buggy) code.
+          - Keep the package and class name unchanged.
+          - Preserve the IO interface (port names and widths).
           - Only output valid Scala code without Markdown fences.
+
+        Common Chisel3 patterns and pitfalls to avoid:
+          - If you need a mutable array of hardware values, use:
+              val xs = Wire(Vec(N, UInt(W.W)))
+            and assign with:
+              xs(i) := ...
+            DO NOT use `Seq` or `List` for mutable hardware containers.
+          - If the compiler says:
+              "value update is not a member of Seq[...]"
+            it means you tried to write:
+              someSeq(i) = ...
+            on a Scala `Seq`. In that case:
+              * Either change the container to `Wire(Vec(...))`
+                and use `:=` for assignments, or
+              * Pre-construct immutable `VecInit(...)` if you don't
+                need in-place updates.
+          - Never write `hw.toSeq` and then try `arr(i) := ...` on that result.
+          - For AES-style byte matrices, the safest pattern is:
+              val bytes = Wire(Vec(16, UInt(8.W)))
+              // fill bytes(i) from state_in
+              // later, build state_out with Cat(...)
+          - Prefer simple for-loops over complex higher-order functions
+            when working with hardware vectors.
+
+        Output rules:
+          - Only output the FULL corrected Scala source code,
+            starting with: package {package}
         """
 
     return textwrap.dedent(sp).strip()
@@ -377,11 +443,13 @@ def build_module_initial_user_prompt(spec: dict) -> str:
     io_desc_lines = []
     for inp in inputs:
         io_desc_lines.append(
-            f"- Input  '{inp['name']}' : {inp['width']} bits, signed={inp.get('signed', False)}"
+            f"- Input '{inp['name']}' : {inp['width']} bits, "
+            f"signed={inp.get('signed', False)}"
         )
     for outp in outputs:
         io_desc_lines.append(
-            f"- Output '{outp['name']}' : {outp['width']} bits, signed={outp.get('signed', False)}"
+            f"- Output '{outp['name']}' : {outp['width']} bits, "
+            f"signed={outp.get('signed', False)}"
         )
     io_desc = "\n".join(io_desc_lines)
 
@@ -404,7 +472,7 @@ def build_module_initial_user_prompt(spec: dict) -> str:
         {imports_block}
       - Implement the operator behavior correctly according to the spec.
       - The module must be purely combinational if specified so (no registers),
-        and respect the timing/latency requirements.
+        and must respect the timing/latency requirements.
       - Do NOT include any Markdown fences or explanations.
       - Only output valid Scala code, starting with:
           package {package}
@@ -412,9 +480,17 @@ def build_module_initial_user_prompt(spec: dict) -> str:
     return textwrap.dedent(up).strip()
 
 
-def build_module_repair_user_prompt(spec: dict, previous_code: str, error_log: str) -> str:
+def build_module_repair_user_prompt(
+    spec: dict,
+    previous_code: str,
+    error_log: str,
+) -> str:
     """
     模块实现失败后修复时的 user prompt。
+
+    这里特别强调：
+      - 必须根据 error_log 修改对应的代码行；
+      - 不要原样输出旧代码。
     """
     op = spec["operator"]
     module_name = op["module_name"]
@@ -422,17 +498,20 @@ def build_module_repair_user_prompt(spec: dict, previous_code: str, error_log: s
 
     up = f"""
     You previously wrote a Chisel3 module '{module_name}' in package '{package}'.
-    The code failed to compile or failed tests. Below is the current code and
-    the (truncated) error log.
+    The code FAILED to compile or FAILED tests.
+
+    Below is the CURRENT code and the (truncated) error log.
 
     Your task:
-      - Carefully read the error messages and fix the code.
+      - Carefully read EVERY error message.
+      - Identify the exact lines and constructs that cause each error.
+      - Fix those lines with minimal but correct changes.
       - Keep the same package and class name.
       - Preserve the IO interface (ports and widths).
-      - Make minimal but correct changes to satisfy the operator specification
-        and pass the tests.
-      - Return the FULL corrected Scala source code.
+      - Make the implementation consistent with the operator behavior.
+      - Ensure the code compiles and passes the tests.
       - Do NOT include any Markdown fences or explanations.
+      - Do NOT simply repeat the old code; you MUST modify it to fix the errors.
 
     CURRENT SCALA CODE:
     <<BEGIN_SCALA>>
@@ -444,7 +523,7 @@ def build_module_repair_user_prompt(spec: dict, previous_code: str, error_log: s
     {error_log}
     <<END_ERROR_LOG>>
 
-    Return ONLY the corrected Scala source code, starting with:
+    Return ONLY the corrected FULL Scala source code, starting with:
       package {package}
     """
     return textwrap.dedent(up).strip()
@@ -454,10 +533,12 @@ def build_module_repair_user_prompt(spec: dict, previous_code: str, error_log: s
 # Prompt 构造（参考模型 / AutoSpec）
 # ----------------------------------------------------------------------
 
+
 def build_ref_system_prompt(spec: dict) -> str:
     op = spec["operator"]
     ref_name = op.get("ref_name", "RefModel")
     package = op["package"]
+
     behavior = spec.get("behavior", {}) or {}
     llm_cfg = spec.get("llm", {}) or {}
 
@@ -467,14 +548,15 @@ def build_ref_system_prompt(spec: dict) -> str:
 
     sp = f"""
     You are an expert Scala engineer and cryptography developer.
-    Your task is to implement a pure-Scala reference model for an AES operator.
+    Your task is to implement a pure-Scala reference model for an operator.
 
     Target object:
       - package: {package}
       - object:  {ref_name}
       - API:     def apply(x: BigInt): BigInt
 
-    The function takes a 128-bit AES state as BigInt and returns the transformed state.
+    The function takes a 128-bit AES state as BigInt and returns
+    the transformed state.
 
     High-level description:
     {desc}
@@ -486,7 +568,8 @@ def build_ref_system_prompt(spec: dict) -> str:
     {ref_hint}
 
     Rules:
-      - Implement this as a pure Scala object with a single apply(x: BigInt): BigInt method.
+      - Implement this as a pure Scala object with a single
+        `apply(x: BigInt): BigInt` method.
       - Do NOT use Chisel here.
       - Only output valid Scala code, starting with:
           package {package}
@@ -505,14 +588,15 @@ def build_ref_user_prompt(spec: dict) -> str:
       package {package}
       object {ref_name} {{
         def apply(x: BigInt): BigInt = {{
-          ...
+          // implement the operator transformation here
         }}
       }}
 
     Requirements:
-      - x is a 128-bit AES state represented as BigInt.
-      - Implement the operator behavior exactly as described in the spec.
-      - Do NOT include any Markdown fences or explanations.
+      - x is a 128-bit AES state represented as BigInt (little or big endian
+        as implied by the operator spec).
+      - Implement the operator behavior exactly as described.
+      - Do NOT include Markdown.
       - Only output valid Scala code, starting with:
           package {package}
     """
@@ -525,6 +609,7 @@ def build_test_system_prompt(spec: dict) -> str:
     ref_name = op.get("ref_name")
     spec_name = op.get("spec_name")
     package = op["package"]
+
     llm_cfg = spec.get("llm", {}) or {}
     test_hint = llm_cfg.get("test_hint", "")
 
@@ -536,7 +621,7 @@ def build_test_system_prompt(spec: dict) -> str:
     Target DUT class: {module_name}
     Target test class name: {spec_name}
 
-    If a reference model object {ref_name} is available in the same package,
+    If a reference model object `{ref_name}` is available in the same package,
     you may use it to compute expected outputs.
 
     Additional testing hints (if any):
@@ -549,7 +634,9 @@ def build_test_system_prompt(spec: dict) -> str:
           import chiseltest._
           import org.scalatest.freespec.AnyFreeSpec
       - The class must be defined as:
-          class {spec_name} extends AnyFreeSpec with ChiselScalatestTester {{ ... }}
+          class {spec_name} extends AnyFreeSpec with ChiselScalatestTester {{
+            ...
+          }}
       - Only output valid Scala code, starting with:
           package {package}
     """
@@ -575,10 +662,11 @@ def build_test_user_prompt(spec: dict) -> str:
           import chiseltest._
           import org.scalatest.freespec.AnyFreeSpec
       - Instantiate the DUT:
-          test(new {module_name}) {{ dut => ... }}
+          test(new {module_name}) {{ dut => ...
+          }}
       - Use several fixed AES-like test vectors and some random tests.
       - If object {ref_name} is available, use:
-          val expected = {ref_name}(in)
+          val expected = {ref_name}(inBig)
         and compare dut.io outputs against expected.
       - Do NOT include Markdown.
       - Only output valid Scala code, starting with:
@@ -590,6 +678,7 @@ def build_test_user_prompt(spec: dict) -> str:
 # ----------------------------------------------------------------------
 # LLM 调用 + Scala 代码抽取
 # ----------------------------------------------------------------------
+
 
 def extract_scala_code_from_response(text: str, package_name: str) -> str:
     """
@@ -649,6 +738,7 @@ def call_llm_simple(system_prompt: str, user_prompt: str) -> Tuple[str, str, str
 # 一次性生成：参考模型 / AutoSpec
 # ----------------------------------------------------------------------
 
+
 def maybe_generate_ref_model(
     spec: dict,
     root: Path,
@@ -663,7 +753,10 @@ def maybe_generate_ref_model(
     package = op["package"]
     ref_name = op.get("ref_name")
     if not ref_name:
-        print("[op_loop] llm.generate_ref_model=true but operator.ref_name is missing; skip ref model.")
+        print(
+            "[op_loop] llm.generate_ref_model=true but operator.ref_name "
+            "is missing; skip ref model."
+        )
         return
 
     scala_root = root / "src" / "main" / "scala"
@@ -675,6 +768,7 @@ def maybe_generate_ref_model(
         return
 
     print(f"[op_loop] Generating reference model: {package}.{ref_name}")
+
     sys_prompt = build_ref_system_prompt(spec)
     user_prompt = build_ref_user_prompt(spec)
     raw_resp, sp, up = call_llm_simple(sys_prompt, user_prompt)
@@ -714,12 +808,16 @@ def maybe_generate_test_spec(
 
     op = spec["operator"]
     package = op["package"]
+
     test_cfg = spec.get("test", {}) or {}
     suite_name = test_cfg.get("suite_name", "")
     spec_name = op.get("spec_name") or (suite_name.split(".")[-1] if suite_name else None)
 
     if not spec_name or not suite_name:
-        print("[op_loop] generate_testbench=true but spec_name or test.suite_name missing; skip test spec.")
+        print(
+            "[op_loop] generate_testbench=true but spec_name or "
+            "test.suite_name missing; skip test spec."
+        )
         return
 
     scala_root = root / "src" / "test" / "scala"
@@ -731,6 +829,7 @@ def maybe_generate_test_spec(
         return
 
     print(f"[op_loop] Generating test spec: {package}.{spec_name}")
+
     sys_prompt = build_test_system_prompt(spec)
     user_prompt = build_test_user_prompt(spec)
     raw_resp, sp, up = call_llm_simple(sys_prompt, user_prompt)
@@ -761,6 +860,7 @@ def maybe_generate_test_spec(
 # 主循环（模块实现：Generate → Compile → Test → Repair）
 # ----------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Operator-level LLM Generate-Compile-Test-Repair loop"
@@ -784,7 +884,7 @@ def main() -> None:
     parser.add_argument(
         "--keep-on-success",
         action="store_true",
-        help="If set, do not stop after first successful iteration (mainly for debugging).",
+        help="If set, do not stop after first successful iteration (debug only).",
     )
 
     args = parser.parse_args()
@@ -800,7 +900,7 @@ def main() -> None:
     # 数据集目录（按算子划分）
     dataset_dir = get_dataset_dir(root, args.op, spec)
 
-    # 先尝试一次性生成参考模型 & 测试 Spec（如果 YAML 要求）
+    # 参考模型 & 测试代码的“一次性生成”（可选）
     maybe_generate_ref_model(spec, root, dataset_dir, args.op)
     maybe_generate_test_spec(spec, root, dataset_dir, args.op)
 
@@ -808,6 +908,20 @@ def main() -> None:
     scala_root = root / "src" / "main" / "scala"
     scala_path = scala_root / Path(package.replace(".", "/")) / f"{module_name}.scala"
     scala_path.parent.mkdir(parents=True, exist_ok=True)
+    # ------------------------------
+    # ⭐ 方案 1：自动删除其他算子文件（避免互相影响）
+    # ------------------------------
+    auto_dir = scala_root / Path(package.replace(".", "/"))
+    auto_dir.mkdir(parents=True, exist_ok=True)
+
+    for f in auto_dir.glob("*.scala"):
+        # 只保留当前算子的文件
+        if f.name != f"{module_name}.scala":
+            print(f"[op_loop] Removing stale auto module: {f}")
+            try:
+                f.unlink()
+            except Exception as e:
+                print(f"[op_loop] Warning: failed to remove {f}: {e}")
 
     # 测试相关配置
     test_cfg = spec.get("test", {}) or {}
@@ -827,13 +941,15 @@ def main() -> None:
     # 如果已经有旧代码，可作为第一次 repair 的起点
     if scala_path.exists():
         previous_code = scala_path.read_text(encoding="utf-8")
-        print(f"[op_loop] Found existing Scala file, will start from repair mode.")
+        print("[op_loop] Found existing Scala file, will start from REPAIR mode.")
+    else:
+        print("[op_loop] No existing Scala file, will start from INITIAL generation.")
 
     for i in range(1, args.max_iters + 1):
         print(f"\n[op_loop] ===== Iteration {i}/{args.max_iters} =====")
 
         # 调用 LLM 生成/修复代码
-        print("[op_loop] Calling LLM to generate/repair code...")
+        print("[op_loop] Calling LLM to generate/repair module implementation...")
         raw_resp, sys_prompt, user_prompt = call_llm_for_module(
             spec,
             previous_code=previous_code,
@@ -882,7 +998,6 @@ def main() -> None:
                 print("[op_loop] ✅ Stopping loop because operator has converged.")
                 return
             else:
-                # 调试模式下，可以继续迭代
                 previous_code = scala_code
                 error_log = None
                 continue
@@ -892,8 +1007,10 @@ def main() -> None:
         previous_code = scala_code
         error_log = sbt_log
 
-    print("[op_loop] ❌ Reached max iterations "
-          f"({args.max_iters}) without passing target operator tests.")
+    print(
+        "[op_loop] ❌ Reached max iterations "
+        f"({args.max_iters}) without passing target operator tests."
+    )
 
 
 if __name__ == "__main__":
