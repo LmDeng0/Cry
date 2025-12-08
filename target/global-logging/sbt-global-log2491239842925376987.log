@@ -1,0 +1,93 @@
+[debug] > Exec(early(addDefaultCommands), None, None)
+[debug] > Exec(addDefaultCommands, None, None)
+[debug] > Exec(early(initialize), None, None)
+[debug] > Exec(initialize, None, None)
+[debug] > Exec(boot, None, None)
+[debug] > Exec(writeSbtVersion, None, None)
+[debug] > Exec(reload, None, None)
+[debug] > Exec(sbtStashOnFailure, None, None)
+[debug] > Exec(onFailure loadFailed, None, None)
+[debug] > Exec(loadp, None, None)
+[info] welcome to sbt 1.11.7 (Ubuntu Java 11.0.28)
+[debug] Load.defaultLoad until apply took 124.193017ms
+[debug]           Load.loadUnit: plugins took 100.992009ms
+[debug]           Load.loadUnit: defsScala took 0.391265ms
+[debug] [Loading] Scanning directory /home/crypto-chisel-llm/project
+[debug]             Load.loadUnit: mkEval took 8.658103ms
+[debug] [Loading] Found non-root projects 
+[debug] [Loading] Done in /home/crypto-chisel-llm/project, returning: ()
+[debug] deducing auto plugins based on known facts Set(Atom(sbt.plugins.CorePlugin)) and clauses Clauses(Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.ScriptedPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.SbtPlugin),Set(Atom(sbt.ScriptedPlugin)))
+[debug] Clause(Atom(sbt.plugins.SemanticdbPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JUnitXmlReportPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.MiniDependencyTreePlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.plugins.IvyPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.SemanticdbPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.JUnitXmlReportPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.Giter8TemplatePlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.MiniDependencyTreePlugin))))
+[debug]   :: deduced result: Matched(sbt.plugins.CorePlugin,sbt.plugins.Giter8TemplatePlugin,sbt.plugins.IvyPlugin,sbt.plugins.JvmPlugin,sbt.plugins.MiniDependencyTreePlugin,sbt.plugins.JUnitXmlReportPlugin,sbt.plugins.SemanticdbPlugin)
+[debug] Plugins.deducer#function took 14.116011 ms
+[info] loading settings for project crypto-chisel-llm-build from plugins.sbt...
+[debug]               Load.resolveProject(crypto-chisel-llm-build) took 43.533076ms
+[debug]             Load.loadTransitive: finalizeProject(Project(id crypto-chisel-llm-build, base: /home/crypto-chisel-llm/project, plugins: List(<none>))) took 81.181545ms
+[debug] [Loading] Done in /home/crypto-chisel-llm/project, returning: (crypto-chisel-llm-build)
+[debug]           Load.loadUnit: loadedProjectsRaw took 523.097656ms
+[debug]           Load.loadUnit: cleanEvalClasses took 21.004438ms
+[debug]         Load.loadUnit(file:/home/crypto-chisel-llm/project/, ...) took 652.328055ms
+[debug]       Load.apply: load took 769.342802ms
+[debug]       Load.apply: resolveProjects took 5.199636ms
+[debug]       Load.apply: finalTransforms took 51.089862ms
+[debug]       Load.apply: config.delegates took 6.608519ms
+[debug]       Load.apply: Def.make(settings)... took 425.250996ms
+[debug]       Load.apply: structureIndex took 89.693295ms
+[debug]       Load.apply: mkStreams took 1.694355ms
+[info] loading project definition from /home/crypto-chisel-llm/project
+[debug] Running task... Cancel: Signal, check cycles: false, forcegc: true
+[debug]     Load.loadUnit: plugins took 2313.973527ms
+[debug]     Load.loadUnit: defsScala took 0.005075ms
+[debug] [Loading] Scanning directory /home/crypto-chisel-llm
+[debug]       Load.loadUnit: mkEval took 0.178344ms
+[debug] [Loading] Found root project root w/ remaining 
+[debug] deducing auto plugins based on known facts Set(Atom(sbt.plugins.CorePlugin)) and clauses Clauses(Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.ScriptedPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.SbtPlugin),Set(Atom(sbt.ScriptedPlugin)))
+[debug] Clause(Atom(sbt.plugins.SemanticdbPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JUnitXmlReportPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.MiniDependencyTreePlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(org.scalafmt.sbt.ScalafmtPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.plugins.IvyPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.SemanticdbPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.JUnitXmlReportPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.Giter8TemplatePlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.MiniDependencyTreePlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(org.scalafmt.sbt.ScalafmtPlugin))))
+[debug]   :: deduced result: Matched(sbt.plugins.CorePlugin,sbt.plugins.Giter8TemplatePlugin,sbt.plugins.IvyPlugin,sbt.plugins.JvmPlugin,org.scalafmt.sbt.ScalafmtPlugin,sbt.plugins.MiniDependencyTreePlugin,sbt.plugins.JUnitXmlReportPlugin,sbt.plugins.SemanticdbPlugin)
+[debug] Plugins.deducer#function took 2.048018 ms
+[info] loading settings for project root from build.sbt...
+[debug]         Load.resolveProject(root) took 7.659056ms
+[debug]       Load.loadTransitive: finalizeProject(Project(id root, base: /home/crypto-chisel-llm, plugins: List(<none>))) took 10.747424ms
+[debug] [Loading] Done in /home/crypto-chisel-llm, returning: (root)
+[debug]     Load.loadUnit: loadedProjectsRaw took 76.342153ms
+[debug]     Load.loadUnit: cleanEvalClasses took 0.962205ms
+[debug]   Load.loadUnit(file:/home/crypto-chisel-llm/, ...) took 2392.712992ms
+[debug] Load.apply: load took 2416.182692ms
+[debug] Load.apply: resolveProjects took 0.202261ms
+[debug] Load.apply: finalTransforms took 9.439799ms
+[debug] Load.apply: config.delegates took 0.411976ms
+[debug] Load.apply: Def.make(settings)... took 120.191691ms
+[debug] Load.apply: structureIndex took 43.873347ms
+[debug] Load.apply: mkStreams took 0.00732ms
+[info] set current project to crypto-chisel-llm (in build file:/home/crypto-chisel-llm/)
+[debug] > Exec(sbtPopOnFailure, None, None)
+[debug] > Exec(resumeFromFailure, None, None)
+[debug] > Exec(notifyUsersAboutShell, None, None)
+[debug] > Exec(iflast shell, None, None)
+[debug] > Exec(testOnly crypto.aes.llm.auto.SubBytesAutoSpec, None, None)
+[debug] Evaluating tasks: Test / testOnly
+[debug] Running task... Cancel: Signal, check cycles: false, forcegc: true
+[info] compiling 1 Scala source to /home/crypto-chisel-llm/target/scala-2.13/test-classes ...
+[warn] Canceling execution...

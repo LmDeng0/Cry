@@ -1,0 +1,43 @@
+[debug] > Exec(early(addDefaultCommands), None, None)
+[debug] > Exec(addDefaultCommands, None, None)
+[debug] > Exec(early(initialize), None, None)
+[debug] > Exec(initialize, None, None)
+[debug] > Exec(boot, None, None)
+[debug] > Exec(writeSbtVersion, None, None)
+[debug] > Exec(reload, None, None)
+[debug] > Exec(sbtStashOnFailure, None, None)
+[debug] > Exec(onFailure loadFailed, None, None)
+[debug] > Exec(loadp, None, None)
+[info] welcome to sbt 1.11.7 (Ubuntu Java 11.0.28)
+[debug] Load.defaultLoad until apply took 86.018888ms
+[debug]           Load.loadUnit: plugins took 82.233375ms
+[debug]           Load.loadUnit: defsScala took 0.326779ms
+[debug] [Loading] Scanning directory /home/crypto-chisel-llm/project
+[debug]             Load.loadUnit: mkEval took 6.383258ms
+[debug] [Loading] Found non-root projects 
+[debug] [Loading] Done in /home/crypto-chisel-llm/project, returning: ()
+[debug] deducing auto plugins based on known facts Set(Atom(sbt.plugins.CorePlugin)) and clauses Clauses(Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.ScriptedPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.SbtPlugin),Set(Atom(sbt.ScriptedPlugin)))
+[debug] Clause(Atom(sbt.plugins.SemanticdbPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JUnitXmlReportPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.MiniDependencyTreePlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.plugins.IvyPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.SemanticdbPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.JUnitXmlReportPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.Giter8TemplatePlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.MiniDependencyTreePlugin))))
+[debug]   :: deduced result: Matched(sbt.plugins.CorePlugin,sbt.plugins.Giter8TemplatePlugin,sbt.plugins.IvyPlugin,sbt.plugins.JvmPlugin,sbt.plugins.MiniDependencyTreePlugin,sbt.plugins.JUnitXmlReportPlugin,sbt.plugins.SemanticdbPlugin)
+[debug] Plugins.deducer#function took 13.526082 ms
+[info] loading settings for project crypto-chisel-llm-build from plugins.sbt...
+[debug]               Load.resolveProject(crypto-chisel-llm-build) took 41.931966ms
+[debug]             Load.loadTransitive: finalizeProject(Project(id crypto-chisel-llm-build, base: /home/crypto-chisel-llm/project, plugins: List(<none>))) took 78.04937ms
+[debug] [Loading] Done in /home/crypto-chisel-llm/project, returning: (crypto-chisel-llm-build)
+[debug]           Load.loadUnit: loadedProjectsRaw took 693.708406ms
+[debug]           Load.loadUnit: cleanEvalClasses took 24.821276ms
+[debug]         Load.loadUnit(file:/home/crypto-chisel-llm/project/, ...) took 806.524637ms
+[debug]       Load.apply: load took 918.083552ms
+[debug]       Load.apply: resolveProjects took 4.673131ms
+[debug]       Load.apply: finalTransforms took 47.852791ms
+[debug]       Load.apply: config.delegates took 6.041528ms
