@@ -1,17 +1,13 @@
-[error] /home/crypto-chisel-llm/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala:20:52: value sbox is not a member of object crypto.aes.AesSBoxConst
-[error]   val sboxedBytes = bytes.map(byte => AesSBoxConst.sbox(byte))
-[error]                                                    ^
-[warn] /home/crypto-chisel-llm/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala:16:20: reflective access of structural type member value state_in should be enabled
+[error] /home/crypto-chisel-llm/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala:17:30: missing parameter type
+[error]   val bytes = Seq.fill(16) { i => io.state_in((i + 1) * 8 - 1, i * 8) }
+[error]                              ^
+[warn] /home/crypto-chisel-llm/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala:23:6: reflective access of structural type member value state_out should be enabled
 [warn] by making the implicit value scala.language.reflectiveCalls visible.
 [warn] This can be achieved by adding the import clause 'import scala.language.reflectiveCalls'
 [warn] or by setting the compiler option -language:reflectiveCalls.
 [warn] See the Scaladoc for value scala.language.reflectiveCalls for a discussion
 [warn] why the feature should be explicitly enabled.
-[warn]     bytes(i) := io.state_in((i + 1) * 8 - 1, i * 8)
-[warn]                    ^
-[warn] /home/crypto-chisel-llm/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala:23:6: reflective access of structural type member value state_out should be enabled
-[warn] by making the implicit value scala.language.reflectiveCalls visible.
-[warn]   io.state_out := Cat(sboxedBytes.reverse)
+[warn]   io.state_out := Cat(outBytes.reverse)
 [warn]      ^
-[warn] two warnings found
+[warn] one warning found
 [error] one error found

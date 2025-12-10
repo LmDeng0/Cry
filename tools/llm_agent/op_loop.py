@@ -49,7 +49,6 @@ from tools.llm_client import client
 # 基础工具函数
 # ----------------------------------------------------------------------
 
-
 def project_root() -> Path:
     """
     返回项目根目录：即包含 build.sbt 的目录。
@@ -95,7 +94,6 @@ def shorten_log(log: str, max_lines: int = 80) -> str:
 # ----------------------------------------------------------------------
 # 数据集目录 & 追踪记录
 # ----------------------------------------------------------------------
-
 
 def get_dataset_dir(root: Path, op_name: str) -> Path:
     """
@@ -188,7 +186,6 @@ def append_trace_record(
 # sbt 调用 + 只关心目标 suite 是否失败
 # ----------------------------------------------------------------------
 
-
 def run_sbt_tests(test_cmd: str, target_suite: str, workdir: Path) -> Tuple[bool, str]:
     """
     运行 sbt 测试，并且只关心 target_suite（例如 "crypto.aes.llm.auto.SubBytesAutoSpec"）
@@ -271,9 +268,58 @@ def run_sbt_tests(test_cmd: str, target_suite: str, workdir: Path) -> Tuple[bool
 
 
 # ----------------------------------------------------------------------
-# Prompt 构造（模块实现：修剪过，避免超上下文）
+# IO 描述辅助（给 prompt 用）
 # ----------------------------------------------------------------------
 
+def build_io_description(spec: dict) -> Tuple[str, str]:
+    """
+    从 spec.operator.io 中生成两部分：
+      - io_desc：文字描述，用于 prompt 说明
+      - io_code：Bundle 代码示例，用于强约束 IO 名称和方向
+    """
+    op = spec.get("operator", {}) or {}
+    io = op.get("io", {}) or {}
+    inputs = io.get("inputs", []) or []
+    outputs = io.get("outputs", []) or []
+
+    io_desc_lines = []
+    io_code_lines = ["val io = IO(new Bundle {"]
+
+    for inp in inputs:
+        name = inp["name"]
+        width = inp.get("width", 1)
+        signed = bool(inp.get("signed", False))
+        sign_str = "SInt" if signed else "UInt"
+        io_desc_lines.append(
+            f"- Input  '{name}' : {width} bits, signed={signed}"
+        )
+        io_code_lines.append(
+            f"  val {name} = Input({sign_str}({width}.W))"
+        )
+
+    for outp in outputs:
+        name = outp["name"]
+        width = outp.get("width", 1)
+        signed = bool(outp.get("signed", False))
+        sign_str = "SInt" if signed else "UInt"
+        io_desc_lines.append(
+            f"- Output '{name}' : {width} bits, signed={signed}"
+        )
+        io_code_lines.append(
+            f"  val {name} = Output({sign_str}({width}.W))"
+        )
+
+    io_code_lines.append("})")
+
+    io_desc = "\n".join(io_desc_lines)
+    io_code = "\n".join(io_code_lines)
+
+    return io_desc, io_code
+
+
+# ----------------------------------------------------------------------
+# Prompt 构造（模块实现：修剪过，避免超上下文）
+# ----------------------------------------------------------------------
 
 def build_system_prompt(spec: dict, for_repair: bool) -> str:
     """
@@ -289,7 +335,15 @@ def build_system_prompt(spec: dict, for_repair: bool) -> str:
 
     desc = behavior.get("description", "")
     pseudo = behavior.get("pseudocode", "")
-    llm_hint = llm_cfg.get("implementation_hint", "")
+
+    # 兼容老字段 implementation_hint 和新字段 module_hint
+    llm_hint = (
+        llm_cfg.get("implementation_hint")
+        or llm_cfg.get("module_hint")
+        or ""
+    )
+
+    io_desc, io_code = build_io_description(spec)
 
     if not for_repair:
         sp = f"""
@@ -307,10 +361,16 @@ def build_system_prompt(spec: dict, for_repair: bool) -> str:
         Behavioral pseudocode (if any):
         {pseudo}
 
+        IO specification (MUST be followed exactly):
+        {io_desc}
+
+        The IO Bundle MUST match the following Scala code snippet exactly:
+        {io_code}
+
         Implementation hints (if any):
         {llm_hint}
 
-        Rules:
+        Global rules:
           - Always generate valid Scala + Chisel3.
           - Do NOT include Markdown fences (no ```scala```).
           - The code must start with:
@@ -328,11 +388,19 @@ def build_system_prompt(spec: dict, for_repair: bool) -> str:
           - package: {package}
           - class:   {module_name}
 
+        IO specification (MUST remain unchanged):
+        {io_desc}
+
+        The IO Bundle MUST stay compatible with:
+        {io_code}
+
+        Implementation hints (from spec, MUST be respected):
+        {llm_hint}
+
         Rules:
-          - You MUST read the error log carefully and fix the exact lines
-            that cause the errors. Do NOT ignore the log.
+          - You MUST read the error log carefully and fix the exact lines that cause the errors.
           - Do NOT change the package or class name.
-          - Keep the IO interface (port names and widths) unchanged.
+          - Do NOT change port names or their widths.
           - Only output valid Scala code without Markdown fences.
         """
 
@@ -350,20 +418,7 @@ def build_initial_user_prompt(spec: dict) -> str:
     llm_cfg = spec.get("llm", {}) or {}
     extra_imports = llm_cfg.get("extra_imports", [])
 
-    io = op.get("io", {}) or {}
-    inputs = io.get("inputs", []) or []
-    outputs = io.get("outputs", []) or []
-
-    io_desc_lines = []
-    for inp in inputs:
-        io_desc_lines.append(
-            f"- Input  '{inp['name']}' : {inp['width']} bits, signed={inp.get('signed', False)}"
-        )
-    for outp in outputs:
-        io_desc_lines.append(
-            f"- Output '{outp['name']}' : {outp['width']} bits, signed={outp.get('signed', False)}"
-        )
-    io_desc = "\n".join(io_desc_lines)
+    io_desc, io_code = build_io_description(spec)
 
     imports_block = "\n".join(
         [f"import {imp}" for imp in extra_imports]
@@ -375,8 +430,12 @@ def build_initial_user_prompt(spec: dict) -> str:
       package {package}
       class {module_name} extends chisel3.Module
 
-    IO interface:
+    IO interface description:
     {io_desc}
+
+    The IO Bundle MUST be exactly:
+
+    {io_code}
 
     Requirements:
       - Use `import chisel3._` and `import chisel3.util._`.
@@ -400,10 +459,28 @@ def build_repair_user_prompt(spec: dict, previous_code: str, error_log: str) -> 
     module_name = op["module_name"]
     package = op["package"]
 
+    io_desc, io_code = build_io_description(spec)
+    llm_cfg = spec.get("llm", {}) or {}
+    llm_hint = (
+        llm_cfg.get("implementation_hint")
+        or llm_cfg.get("module_hint")
+        or ""
+    )
+
     up = f"""
     You previously wrote a Chisel3 module '{module_name}' in package '{package}'.
     The code failed to compile or failed tests. Below is the current code and
     the (truncated) error log.
+
+    Operator IO specification (you MUST keep this interface):
+    {io_desc}
+
+    The IO Bundle MUST remain compatible with:
+
+    {io_code}
+
+    Implementation hints from the spec (you MUST follow them):
+    {llm_hint}
 
     Your task:
       - Carefully read the error messages and fix the code.
@@ -434,7 +511,6 @@ def build_repair_user_prompt(spec: dict, previous_code: str, error_log: str) -> 
 # ----------------------------------------------------------------------
 # LLM 调用 + Scala 代码抽取
 # ----------------------------------------------------------------------
-
 
 def extract_scala_code_from_response(text: str, package_name: str) -> str:
     """
@@ -487,7 +563,6 @@ def call_llm_with_spec(
 # ----------------------------------------------------------------------
 # 主循环
 # ----------------------------------------------------------------------
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -563,8 +638,10 @@ def main() -> None:
         print("[op_loop] Found existing Scala file, will start from REPAIR mode.")
     else:
         if scala_path.exists() and args.from_scratch:
-            print("[op_loop] Existing Scala file found, but --from-scratch is set -> "
-                  "starting from FRESH generation and will overwrite.")
+            print(
+                "[op_loop] Existing Scala file found, but --from-scratch is set -> "
+                "starting from FRESH generation and will overwrite."
+            )
         else:
             print("[op_loop] No existing Scala file, starting from FRESH generation.")
 

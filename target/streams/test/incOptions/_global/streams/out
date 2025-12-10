@@ -1,8 +1,2 @@
 [debug] Created transactional ClassFileManager with tempDir = /home/crypto-chisel-llm/target/scala-2.13/test-classes.bak
-[debug] About to delete class files:
-[debug] 	SubBytesAutoSpec.class
-[debug] We backup class files:
-[debug] 	SubBytesAutoSpec.class
-[debug] Registering generated classes:
-[debug] 	SubBytesAutoSpec.class
 [debug] Removing the temporary directory used for backing up class files: /home/crypto-chisel-llm/target/scala-2.13/test-classes.bak
