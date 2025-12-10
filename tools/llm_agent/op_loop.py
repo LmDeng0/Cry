@@ -36,13 +36,21 @@ import textwrap
 import subprocess
 import re
 import json
+import random
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict, Any
 
 import yaml
 
 from tools.llm_client import client
+
+# ----------------------------------------------------------------------
+# 全局“随机扰动”开关（由 main() 设置）
+# ----------------------------------------------------------------------
+
+JITTER_ENABLED: bool = False
+JITTER_LEVEL: str = "light"   # 预留：'light', 'medium', 'strong' 等
 
 
 # ----------------------------------------------------------------------
@@ -124,6 +132,8 @@ def append_trace_record(
     suite_name: str,
     test_ok: bool,
     sbt_log: str,
+    run_tag: str,
+    jitter_info: Optional[Dict[str, Any]],
 ) -> None:
     """
     将本次迭代的全部信息记录到 JSONL 文件中：
@@ -151,6 +161,12 @@ def append_trace_record(
             "timestamp_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z",
             "iteration": iteration,
             "mode": mode,  # "initial" or "repair"
+            "run_tag": run_tag,
+            "jitter": jitter_info or {
+                "enabled": False,
+                "level": "none",
+                "note": "",
+            },
         },
         "operator": {
             "name": op_name,
@@ -315,6 +331,81 @@ def build_io_description(spec: dict) -> Tuple[str, str]:
     io_code = "\n".join(io_code_lines)
 
     return io_desc, io_code
+
+
+# ----------------------------------------------------------------------
+# Prompt 随机扰动（jitter）
+# ----------------------------------------------------------------------
+
+def maybe_jitter_prompts(
+    system_prompt: str,
+    user_prompt: str,
+    spec: dict,
+    mode: str,
+) -> Tuple[str, str, Dict[str, Any]]:
+    """
+    在“采数模式”下，对 prompt 做轻量级随机扰动，增加数据多样性。
+    - 不改变算子语义，只是调整风格/强调点/写法偏好等。
+    - 通过全局变量 JITTER_ENABLED / JITTER_LEVEL 控制。
+    - 返回 (new_system_prompt, new_user_prompt, jitter_meta)
+    """
+    if not JITTER_ENABLED:
+        return system_prompt, user_prompt, {
+            "enabled": False,
+            "level": "none",
+            "note": "",
+        }
+
+    op = spec.get("operator", {}) or {}
+    op_name = op.get("name", "UNKNOWN")
+
+    # 一些安全的“风格扰动”片段（只改写作风格，不改功能要求）
+    sys_styles = [
+        "Prefer simple, flat code without unnecessary abstractions.",
+        "Focus on readability and explicit intermediate wires.",
+        "Avoid clever tricks; write straightforward, test-friendly code.",
+        "Prioritize correctness over micro-optimizations.",
+    ]
+    usr_styles = [
+        "- Add brief inline comments for any non-trivial bit slicing.\n"
+        "- Use descriptive names for intermediate wires.\n",
+        "- Avoid creating unused wires or registers.\n"
+        "- Keep the logic purely combinational if required by the spec.\n",
+        "- Prefer explicit for-loops over higher-order functions like map/zip when convenient.\n",
+    ]
+
+    # 为不同模式区分一点点风格
+    if mode == "initial":
+        base_note = "initial_generation_with_style_jitter"
+    else:
+        base_note = "repair_mode_with_style_jitter"
+
+    # 根据 level 预留不同强度，这里先简单实现 light
+    random_sys = random.choice(sys_styles)
+    random_usr = random.choice(usr_styles)
+
+    new_system = (
+        system_prompt
+        + "\n\nAdditional style preference (randomized for data collection):\n"
+        + random_sys
+        + f"\n[op={op_name}, mode={mode}, jitter_level={JITTER_LEVEL}]"
+    )
+
+    new_user = (
+        user_prompt
+        + "\n\nExtra coding style requirements (randomized, MUST still obey all IO & behavior specs above):\n"
+        + random_usr
+    )
+
+    jitter_meta = {
+        "enabled": True,
+        "level": JITTER_LEVEL,
+        "note": base_note,
+        "system_style": random_sys,
+        "user_style": random_usr,
+    }
+
+    return new_system.strip(), new_user.strip(), jitter_meta
 
 
 # ----------------------------------------------------------------------
@@ -538,26 +629,36 @@ def call_llm_with_spec(
     spec: dict,
     previous_code: Optional[str],
     error_log: Optional[str],
-) -> Tuple[str, str, str]:
+) -> Tuple[str, str, str, Dict[str, Any]]:
     """
     根据是否已有 previous_code 构造初始生成或修复 prompt，
     并调用统一的 LLM client。
 
     返回:
-      (raw_response, system_prompt, user_prompt)
+      (raw_response, system_prompt, user_prompt, jitter_info)
     便于后续写入数据集。
     """
     if previous_code is None:
         system_prompt = build_system_prompt(spec, for_repair=False)
         user_prompt = build_initial_user_prompt(spec)
+        mode = "initial"
     else:
         # 修复模式：system_prompt 更短，error_log 截断
         system_prompt = build_system_prompt(spec, for_repair=True)
         truncated_log = shorten_log(error_log or "", max_lines=80)
         user_prompt = build_repair_user_prompt(spec, previous_code, truncated_log)
+        mode = "repair"
+
+    # 在这里统一注入随机扰动（仅在采数模式下）
+    system_prompt, user_prompt, jitter_info = maybe_jitter_prompts(
+        system_prompt,
+        user_prompt,
+        spec,
+        mode=mode,
+    )
 
     resp = client.generate(system_prompt=system_prompt, user_prompt=user_prompt)
-    return resp, system_prompt, user_prompt
+    return resp, system_prompt, user_prompt, jitter_info
 
 
 # ----------------------------------------------------------------------
@@ -597,8 +698,32 @@ def main() -> None:
             "generation (no initial repair). The file will still be overwritten."
         ),
     )
+    parser.add_argument(
+        "--jitter-prompts",
+        action="store_true",
+        help=(
+            "Enable light random jitter on system/user prompts for data collection. "
+            "This increases training data diversity without changing IO or semantics."
+        ),
+    )
+    parser.add_argument(
+        "--jitter-level",
+        default="light",
+        choices=["light", "medium"],
+        help="Prompt jitter strength for data collection (default: light).",
+    )
+    parser.add_argument(
+        "--run-tag",
+        default="",
+        help="Optional tag written into dataset meta.run_tag to distinguish runs.",
+    )
 
     args = parser.parse_args()
+
+    # 设置全局随机扰动开关
+    global JITTER_ENABLED, JITTER_LEVEL
+    JITTER_ENABLED = args.jitter_prompts
+    JITTER_LEVEL = args.jitter_level
 
     root = project_root()
     spec_dir = (root / args.spec_dir).resolve()
@@ -627,6 +752,9 @@ def main() -> None:
     print(f"[op_loop] Target module: {package}.{module_name}")
     print(f"[op_loop] Scala output: {scala_path}")
     print(f"[op_loop] sbt test command: sbt \"{test_cmd} {suite_name}\"")
+    print(f"[op_loop] Prompt jitter enabled: {JITTER_ENABLED} (level={JITTER_LEVEL})")
+    if args.run_tag:
+        print(f"[op_loop] Run tag: {args.run_tag}")
 
     previous_code: Optional[str] = None
     error_log: Optional[str] = None
@@ -650,7 +778,7 @@ def main() -> None:
 
         # 调用 LLM 生成/修复代码
         print("[op_loop] Calling LLM to generate/repair module implementation...")
-        raw_resp, sys_prompt, user_prompt = call_llm_with_spec(
+        raw_resp, sys_prompt, user_prompt, jitter_info = call_llm_with_spec(
             spec,
             previous_code=previous_code,
             error_log=error_log,
@@ -691,6 +819,8 @@ def main() -> None:
             suite_name=suite_name,
             test_ok=ok,
             sbt_log=sbt_log,
+            run_tag=args.run_tag,
+            jitter_info=jitter_info,
         )
 
         if ok:

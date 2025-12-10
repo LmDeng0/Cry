@@ -10,15 +10,19 @@ class SubBytesLLMAuto extends Module {
     val state_out = Output(UInt(128.W))
   })
 
-  // Convert AesSBoxConst.table (Seq[Int]) into Vec[UInt(8.W)]
+  // Convert the SBox table into a Vec of UInt(8.W)
   val sbox = VecInit(AesSBoxConst.table.map(_.U(8.W)))
 
-  // Extract 16 bytes using bit slicing
-  val bytes = Seq.tabulate(16) { i => io.state_in((i + 1) * 8 - 1, i * 8) }
+  // Extract 16 bytes from the input state using bit slicing
+  val bytes = Seq.tabulate(16) { i =>
+    io.state_in((i + 1) * 8 - 1, i * 8).asUInt // Extract each byte from the 128-bit input
+  }
 
-  // Apply SBox to each byte
-  val outBytes = bytes.map(byte => sbox(byte))
+  // Apply the SBox substitution to each byte
+  val outBytes = bytes.map { byte =>
+    sbox(byte) // Substitute each byte using the SBox
+  }
 
   // Concatenate the output bytes in reverse order
-  io.state_out := Cat(outBytes.reverse)
+  io.state_out := Cat(outBytes.reverse) // Reverse the order of bytes and concatenate
 }
