@@ -758,6 +758,7 @@ def main() -> None:
 
     previous_code: Optional[str] = None
     error_log: Optional[str] = None
+    ever_ok = False  # 记录是否至少有一次成功
 
     # 如果已经有旧代码，可作为第一次 repair 的起点；
     # 若指定 --from-scratch，则忽略旧代码，但仍会覆盖对应文件。
@@ -824,6 +825,7 @@ def main() -> None:
         )
 
         if ok:
+            ever_ok = True
             print("[op_loop] ✅ Target operator tests PASSED for this iteration.")
             if not args.keep_on_success:
                 print("[op_loop] ✅ Stopping loop because operator has converged.")
@@ -839,8 +841,13 @@ def main() -> None:
         previous_code = scala_code
         error_log = sbt_log
 
-    print("[op_loop] ❌ Reached max iterations "
-          f"({args.max_iters}) without passing target operator tests.")
+    if ever_ok:
+        print("[op_loop] ➜ Reached max iterations "
+            f"({args.max_iters}) with at least one PASS "
+            f"(keep_on_success={args.keep_on_success}).")
+    else:
+        print("[op_loop] ❌ Reached max iterations "
+            f"({args.max_iters}) without passing target operator tests.")
 
 
 if __name__ == "__main__":

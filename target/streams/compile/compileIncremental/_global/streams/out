@@ -2,41 +2,5 @@
 [debug] IncrementalCompile.incrementalCompile
 [debug] previous = Stamps for: 54 products, 24 sources, 3 libraries
 [debug] current source = Set(${BASE}/src/main/scala/crypto/aes/llm/ShiftRowsLLM.scala, ${BASE}/src/main/scala/crypto/aes/MixColumns.scala, ${BASE}/src/main/scala/crypto/aes/AesSBoxConst.scala, ${BASE}/src/main/scala/crypto/aes/llm/Aes128CoreLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/AesRoundLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/MixColumnsLLM.scala, ${BASE}/src/main/scala/crypto/gen/Aes128Core.scala, ${BASE}/src/main/scala/crypto/aes/KeySchedule.scala, ${BASE}/src/main/scala/crypto/aes/llm/SubBytesLLM.scala, ${BASE}/src/main/scala/crypto/aes/llm/AesAddRoundKeyLLM.scala, ${BASE}/src/main/scala/crypto/aes/ShiftRows.scala, ${BASE}/src/main/scala/crypto/gen/KeyScheduleGen.scala, ${BASE}/src/main/scala/crypto/common/Params.scala, ${BASE}/src/main/scala/crypto/aes/SubBytes.scala, ${BASE}/src/main/scala/crypto/aes/AesSBoxTable.scala, ${BASE}/src/main/scala/crypto/aes/AddRoundKey.scala, ${BASE}/src/main/scala/crypto/gen/Emit.scala, ${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala, ${BASE}/src/main/scala/crypto/aes/debug/Aes128CoreLLMDebug.scala, ${BASE}/src/main/scala/crypto/gen/StdRoundGen.scala, ${BASE}/src/main/scala/crypto/gen/AddRoundKeyGen.scala, ${BASE}/src/main/scala/crypto/aes/AesCore.scala, ${BASE}/src/main/scala/crypto/aes/Round.scala, ${BASE}/src/main/scala/crypto/gen/FinalRoundGen.scala)
-[debug] > initialChanges = InitialChanges(Changes(added = Set(), removed = Set(), changed = Set(${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala), unmodified = ...),Set(),Set(),API Changes: Set())
-[debug] 
-[debug] Initial source changes:
-[debug] 	removed: Set()
-[debug] 	added: Set()
-[debug] 	modified: Set(${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala)
-[debug] Invalidated products: Set()
-[debug] External API changes: API Changes: Set()
-[debug] Modified binary dependencies: Set()
-[debug] Initial directly invalidated classes: Set(crypto.aes.llm.auto.SubBytesLLMAuto)
-[debug] Sources indirectly invalidated by:
-[debug] 	product: Set()
-[debug] 	binary dep: Set()
-[debug] 	external source: Set()
-[debug] All initially invalidated classes: Set(crypto.aes.llm.auto.SubBytesLLMAuto)
-[debug] All initially invalidated sources:Set(${BASE}/src/main/scala/crypto/aes/llm/auto/SubBytesLLMAuto.scala)
-[debug] Initial set of included nodes: crypto.aes.llm.auto.SubBytesLLMAuto
-[debug] compilation cycle 1
-[info] compiling 1 Scala source to /home/crypto-chisel-llm/target/scala-2.13/classes ...
-[debug] Returning already retrieved and compiled bridge: /root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala2-sbt-bridge/2.13.14/scala2-sbt-bridge-2.13.14.jar.
-[debug] [zinc] Running cached compiler cd0b4aa for Scala compiler version 2.13.14
-[debug] [zinc] The Scala compiler is invoked with:
-[debug] 	-deprecation
-[debug] 	-unchecked
-[debug] 	-feature
-[debug] 	-Xplugin:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/edu/berkeley/cs/chisel3-plugin_2.13.14/3.6.1/chisel3-plugin_2.13.14-3.6.1.jar
-[debug] 	-classpath
-[debug] 	/home/crypto-chisel-llm/target/scala-2.13/classes:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.14/scala-library-2.13.14.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/edu/berkeley/cs/chisel3_2.13/3.6.1/chisel3_2.13-3.6.1.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.14/scala-reflect-2.13.14.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/edu/berkeley/cs/firrtl_2.13/1.6.0/firrtl_2.13-1.6.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle_2.13/2.0.0/upickle_2.13-2.0.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/os-lib_2.13/0.8.1/os-lib_2.13-0.8.1.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.9.3/antlr4-runtime-4.9.3.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.18.3/protobuf-java-3.18.3.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/github/scopt/scopt_2.13/3.7.1/scopt_2.13-3.7.1.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/net/jcazevedo/moultingyaml_2.13/0.4.2/moultingyaml_2.13-0.4.2.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-native_2.13/4.0.6/json4s-native_2.13-4.0.6.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-text/1.10.0/commons-text-1.10.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/io/github/alexarchambault/data-class_2.13/0.2.5/data-class_2.13-0.2.5.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-parallel-collections_2.13/1.0.4/scala-parallel-collections_2.13-1.0.4.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/ujson_2.13/2.0.0/ujson_2.13-2.0.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upack_2.13/2.0.0/upack_2.13-2.0.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-implicits_2.13/2.0.0/upickle-implicits_2.13-2.0.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/geny_2.13/0.7.1/geny_2.13-0.7.1.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/github/nscala-time/nscala-time_2.13/2.22.0/nscala-time_2.13-2.22.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/yaml/snakeyaml/1.26/snakeyaml-1.26.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-core_2.13/4.0.6/json4s-core_2.13-4.0.6.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-native-core_2.13/4.0.6/json4s-native-core_2.13-4.0.6.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-core_2.13/2.0.0/upickle-core_2.13-2.0.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/joda-time/joda-time/2.10.1/joda-time-2.10.1.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/joda/joda-convert/2.2.0/joda-convert-2.2.0.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-ast_2.13/4.0.6/json4s-ast_2.13-4.0.6.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-scalap_2.13/4.0.6/json4s-scalap_2.13-4.0.6.jar:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/com/thoughtworks/paranamer/paranamer/2.8/paranamer-2.8.jar
-[debug] Scala compilation took 3.54455113 s
-[info] done compiling
-[debug] New invalidations:
-[debug] Initial set of included nodes: 
-[debug] Previously invalidated, but (transitively) depend on new invalidations:
-[debug] Final step, transitive dependencies:
-[debug] 	Set()
-[debug] Initial set of included nodes: crypto.aes.llm.auto.SubBytesLLMAuto
-[debug] Invalidated macros due to upstream dependencies change: Set()
-[debug] No classes were invalidated.
+[debug] > initialChanges = InitialChanges(Changes(added = Set(), removed = Set(), changed = Set(), unmodified = ...),Set(),Set(),API Changes: Set())
+[debug] No changes
