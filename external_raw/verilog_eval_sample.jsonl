@@ -1,0 +1,1 @@
+{"id": "toy_prob_001", "prompt": "Implement a 1-bit AND gate: out = a & b.", "buggy": "module and_gate(input a, input b, output out);\n  assign out = a | b;\nendmodule\n", "fixed": "module and_gate(input a, input b, output out);\n  assign out = a & b;\nendmodule\n", "error": "Expected & but found | in assignment to out."}
